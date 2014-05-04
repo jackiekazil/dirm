@@ -1,0 +1,139 @@
+;; turtles-own == attributes that the turtles own
+turtles-own [ awareness ]
+
+
+patches-own [ non-usage ]                         ;; patches-own == attributes that the patches own
+
+
+to setup                                          ;; setup
+  ca                                              ;; clear-all
+  set-default-shape turtles "person"              ;; make the turtles people
+  crt people                                      ;; create people
+                                                      ;; why people and person?
+
+  ask turtles                                     ;; tell turtles what to do
+    [ set color gray                              ;; turtle should be gray
+      fd random 25                                ;; forward random 25 steps
+      setxy random-xcor random-ycor               ;; move each turtle to a random point
+      set awareness 0                             ;; set turtle awareness to 0
+    ]                                                 ;; awareness was set under turtle-own
+
+  ask n-of centers patches                        ;; ask random number of patch centers
+    [ set pcolor green                            ;; to be green
+      set non-usage 0                             ;; set non-usage to 0
+    ]
+  reset-ticks                                     ;; reset ticks
+end
+
+to wander                                         ;; wander function
+  fd 1 lt random 50 rt random 50                  ;; forward 1, left random 50 rt random 50
+end
+
+to go                                             ;; to go
+  ask turtles [ wander ]                          ;; turtles wander
+
+                                                  ;; adjust awareness according to our location
+  ask turtles                                     ;; ask turtles
+    [ if ( pcolor = green or pcolor = blue ) [ set awareness awareness + 5 ]
+                                                  ;; if the patch color is green
+                                                      ;; then add 5 to awareness
+      if ( pcolor = black ) [ set awareness awareness - 1 ]
+                                                  ;; if the patch color is black
+                                                      ;; then subtract 1 from awareness
+      set non-usage 0                             ;; set non-usage to 0
+    ]
+
+                                                  ;; inform others around us
+                                                  ;; ask turtle who are well-informed or activist
+  ask turtles with [ well-informed? or activist? ]
+                                                  ;; ask turtles who share the same patch -
+                                                      ;; aware or unaware?
+                                                      ;; add 1 to awareness
+    [ ask other turtles-here with [ unaware? or aware? ]
+        [ set awareness awareness + 1 ]
+    ]
+
+                                                  ; place limits on the awareness value
+  ask turtles with [ awareness > 15 ] [ set awareness 15 ]   ;; setting max awareness to 15
+  ask turtles with [awareness < 0 ] [ set awareness 0 ]      ;; setting minimum awareness to 0
+
+  color-turtles                                   ; call color turtle function
+
+                                                  ;; create centers
+  ask turtles with [ activist? ]                  ;; ask activist turtles
+                                                  ;; // let command creates a local variable
+                                                  ;; // so, let open-patches, creates open-patches
+                                                  ;; So, set open-patches equal to neighbors
+                                                    ; with black as a color
+    [ let open-patches neighbors with [ pcolor = black ]
+
+      if ( any? open-patches )                    ;; if there are any open patches
+                                                  ;; ask one of the open patches to be blue
+        [ ask one-of open-patches [ set pcolor blue ] ]
+    ]                                             ;; a random patch turns green
+
+  ;;
+  ask patches with [ pcolor != black ]            ;;WE WANT NON-USED CENTERS TO DISAPPEAR
+                                                  ;; ask patches that are not black
+    [                                             ;; if not any any turts -- set non-usage
+                                                    ; to non-usage + 1
+      if ( not any? turtles-here ) [ set non-usage (non-usage + 1) ]
+                                                  ;; if non-usage > than non-usage limit,
+                                                    ; set the color to black
+      if ( non-usage > non-usage-limit ) [ set pcolor black ]
+
+    ]
+
+ do-plotting                                      ;; plot stuff
+
+ tick
+end
+
+to color-turtles                                              ;; color turtles
+  ask turtles [ ifelse ( activist? ) [ set color 64 ]         ;; if activist -- color 64
+                [ ifelse ( well-informed? ) [ set color 66 ]  ;; if well-informed -- color 66
+                  [ ifelse ( aware? ) [ set color 68 ]        ;; if aware -- color 68
+                    [ set color gray ] ] ] ]                  ;; if not -- color gray
+ end
+
+                                                  ;; variables to report -- turtle statuses
+to-report activist?                               ;; activist
+  report awareness >= 15                          ;; >=15
+end
+
+to-report well-informed?                          ;; well-informed
+  report awareness >= 10 and awareness < 15       ;; <15
+end
+
+to-report aware?                                  ;; aware
+  report awareness >= 5 and awareness < 10        ;; < 10
+end
+
+to-report unaware?                                ;; unaware
+  report awareness >= 0 and awareness < 5         ;; < 5
+end
+
+to place-centers                                  ;; place-centers
+  if ( mouse-down? ) [ ask patch mouse-xcor mouse-ycor [ set pcolor green ] display ]
+end
+
+to do-plotting
+  set-current-plot "Avg. Awareness"
+  set-current-plot-pen "Awareness"
+    plot mean [ awareness ] of turtles
+
+  set-current-plot "Level of Awareness"
+  set-current-plot-pen "Activist"
+    plot count turtles with [ activist? ]
+  set-current-plot-pen "Well Informed"
+    plot count turtles with [ well-informed? ]
+  set-current-plot-pen "Aware"
+    plot count turtles with [ aware? ]
+  set-current-plot-pen "Unaware"
+    plot count turtles with [ unaware? ]
+
+end
+
+
+; Copyright 2007 Uri Wilensky.
+; See Info tab for full copyright and license.
