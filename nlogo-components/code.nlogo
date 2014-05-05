@@ -1,15 +1,16 @@
-;;patches-own [ non-usage ]
-
 globals [
   center-patches
 ]
 
+turtles-own [ home-patch next-move ]
+
 breed [survivors survivor]
 breed [helpers helper]
 
-survivors-own [ home-patch j ]
-helpers-own [ supplies ]
-
+survivors-own [ survival-pts recovery-pts]
+helpers-own [ h-type supplies ]
+; h-type is the type of helper
+  ; 1 is life sustaining, 2 is rebuilding & recovery
 
 to setup
   clear-all
@@ -17,22 +18,13 @@ to setup
 
   setup-turtles
   reset-ticks
-
-  show survivor 1
-  show [ home-patch ] of survivor 1
 end
 
 to setup-patches
   ;; setup centers
   ask n-of centers patches
-    [
-      set pcolor green
-    ]
-  set center-patches [self] of patches with [
-    pcolor = green
-  ]
-
-  print center-patches
+    [set pcolor green]
+  set center-patches patches with [pcolor = green]
 end
 
 
@@ -44,28 +36,57 @@ to setup-turtles
     fd random 25
     setxy random-xcor random-ycor
     set home-patch patch-here
-
+    set sur
     ;set energy 1 + random sheep-max-initial-energy
   ]
 
-  ask n-of centers center-patches
+  ask n-of 10 center-patches [
     sprout-helpers 1 [
       set color blue
-      fd random 25
-      ;set energy 1 + random sheep-max-initial-energy
+      ;fd random 25
     ]
-
+  ]
 end
 
 
+to go
+  ask survivors [ decide-survivor-move ]
+  ask helpers [ decide-helper-move ]
+  ask turtles [wander]
+  tick
+end
 
 to wander
   fd 1 lt random 50 rt random 50
 end
 
-to go
-  ask survivors [ wander ]
-  ask helpers [ wander ]
-
-  tick
+to move
+  ;ifelse survival-pts > 50 [][]
+  ;ifelse reporter [ commands1 ] [ commands2 ]
 end
+
+
+
+;todo
+;function that directs survivors on a turn
+;see helper - move towards them
+;memory?
+
+;todo
+;function that directors helpers on a turn
+;see person who needs help -- move towards them
+;memory?
+
+
+;todo
+;estimate and apply damage points by disaster pattern
+; include random
+
+;todo
+;plots to create
+
+
+
+
+
+

@@ -7,9 +7,10 @@ globals [
 breed [survivors survivor]
 breed [helpers helper]
 
-survivors-own [ home-patch j ]
-helpers-own [ supplies ]
-
+survivors-own [ home-patch ]
+helpers-own [ h-type supplies ]
+; h-type is the type of helper
+  ; 1 is life sustaining, 2 is rebuilding & recovery
 
 to setup
   clear-all
@@ -17,9 +18,6 @@ to setup
 
   setup-turtles
   reset-ticks
-
-  show survivor 1
-  show [ home-patch ] of survivor 1
 end
 
 to setup-patches
@@ -48,21 +46,17 @@ to setup-turtles
       ;fd random 25
     ]
   ]
-
-
 end
 
-
-
-to wander
-  fd 1 lt random 50 rt random 50
-end
 
 to go
   ask survivors [ wander ]
   ask helpers [ wander ]
-
   tick
+end
+
+to wander
+  fd 1 lt random 50 rt random 50
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
@@ -79,8 +73,8 @@ GRAPHICS-WINDOW
 1
 1
 0
-1
-1
+0
+0
 1
 0
 36
@@ -93,10 +87,10 @@ ticks
 30.0
 
 BUTTON
-10
-10
-75
-43
+199
+74
+264
+107
 setup
 setup
 NIL
@@ -110,10 +104,10 @@ NIL
 1
 
 BUTTON
-10
-50
-75
-83
+197
+122
+262
+155
 go
 go
 T
@@ -164,10 +158,10 @@ count turtles with [color = gray]
 11
 
 PLOT
-10
-135
-305
-285
+774
+436
+1069
+586
 Level of Awareness
 Time
 Amount
@@ -183,21 +177,6 @@ PENS
 "Well Informed" 1.0 0 -11085214 true "" ""
 "Aware" 1.0 0 -5509967 true "" ""
 "Unaware" 1.0 0 -7500403 true "" ""
-
-SLIDER
-80
-50
-185
-83
-centers
-centers
-0
-100
-20
-5
-1
-NIL
-HORIZONTAL
 
 MONITOR
 10
@@ -273,10 +252,10 @@ mean [non-usage] of patches with [ pcolor != black ]
 11
 
 SLIDER
-10
-90
-185
-123
+234
+522
+409
+555
 non-usage-limit
 non-usage-limit
 0
@@ -288,10 +267,10 @@ ticks
 HORIZONTAL
 
 BUTTON
-195
-10
-305
-43
+55
+527
+165
+560
 NIL
 place-centers
 T
@@ -324,15 +303,45 @@ SLIDER
 213
 990
 246
-num-centers
-num-centers
+centers
+centers
 0
-100
-100
+50
+50
 1
 1
 NIL
 HORIZONTAL
+
+TEXTBOX
+10
+63
+160
+175
+TODO -- add description of the model here  add description of the model here add description of the model here add description of the model here add description of the model here.
+11
+2.0
+1
+
+TEXTBOX
+12
+170
+310
+209
+_____________________________________________________
+10
+8.0
+1
+
+TEXTBOX
+8
+30
+270
+64
+TODO -- Add model title here
+14
+93.0
+1
 
 @#$#@#$#@
 @#$#@#$#@
