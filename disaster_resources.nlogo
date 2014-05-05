@@ -1,13 +1,13 @@
-;;patches-own [ non-usage ]
-
 globals [
   center-patches
 ]
 
+turtles-own [ home-patch next-move ]
+
 breed [survivors survivor]
 breed [helpers helper]
 
-survivors-own [ home-patch ]
+survivors-own [ survival-pts recovery-pts]
 helpers-own [ h-type supplies ]
 ; h-type is the type of helper
   ; 1 is life sustaining, 2 is rebuilding & recovery
@@ -36,7 +36,7 @@ to setup-turtles
     fd random 25
     setxy random-xcor random-ycor
     set home-patch patch-here
-
+    set sur
     ;set energy 1 + random sheep-max-initial-energy
   ]
 
@@ -50,14 +50,46 @@ end
 
 
 to go
-  ask survivors [ wander ]
-  ask helpers [ wander ]
+  ask survivors [ decide-survivor-move ]
+  ask helpers [ decide-helper-move ]
+  ask turtles [wander]
   tick
 end
 
 to wander
   fd 1 lt random 50 rt random 50
 end
+
+to move
+  ;ifelse survival-pts > 50 [][]
+  ;ifelse reporter [ commands1 ] [ commands2 ]
+end
+
+
+
+;todo
+;function that directs survivors on a turn
+;see helper - move towards them
+;memory?
+
+;todo
+;function that directors helpers on a turn
+;see person who needs help -- move towards them
+;memory?
+
+
+;todo
+;estimate and apply damage points by disaster pattern
+; include random
+
+;todo
+;plots to create
+
+
+
+
+
+
 @#$#@#$#@
 GRAPHICS-WINDOW
 314
@@ -284,25 +316,25 @@ NIL
 1
 
 SLIDER
-787
-125
-959
-158
+779
+56
+951
+89
 num-helpers
 num-helpers
 0
-20000
-15
+1000
+0
 5
 1
 NIL
 HORIZONTAL
 
 SLIDER
-818
-213
-990
-246
+779
+100
+951
+133
 centers
 centers
 0
@@ -342,6 +374,21 @@ TODO -- Add model title here
 14
 93.0
 1
+
+SLIDER
+779
+143
+951
+176
+helpers-on-foot
+helpers-on-foot
+0
+1000
+1000
+1
+1
+NIL
+HORIZONTAL
 
 @#$#@#$#@
 @#$#@#$#@
