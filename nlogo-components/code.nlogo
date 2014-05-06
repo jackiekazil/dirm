@@ -36,11 +36,11 @@ to setup-turtles
     fd random 25
     setxy random-xcor random-ycor
     set home-patch patch-here
-    set sur
+
     ;set energy 1 + random sheep-max-initial-energy
   ]
 
-  ask n-of 10 center-patches [
+  ask n-of centers center-patches [
     sprout-helpers 1 [
       set color blue
       ;fd random 25
@@ -52,7 +52,6 @@ end
 to go
   ask survivors [ decide-survivor-move ]
   ask helpers [ decide-helper-move ]
-  ask turtles [wander]
   tick
 end
 
@@ -63,6 +62,13 @@ end
 to move
   ;ifelse survival-pts > 50 [][]
   ;ifelse reporter [ commands1 ] [ commands2 ]
+end
+
+to decide-survivor-move
+  ask survivors [wander]
+end
+
+to decide-helper-move
 end
 
 
