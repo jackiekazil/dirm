@@ -16,9 +16,12 @@ to setup
   clear-all
   reset-ticks
   setup-patches
-  setup-turtles
-  
+  setup-survivors
   disaster-strikes
+  
+  ; We don't setup helpers until the end, because most would not appear until
+  ; after the disaster hit
+  setup-helpers
 end
 
 to setup-patches
@@ -29,7 +32,7 @@ to setup-patches
 end
 
 
-to setup-turtles
+to setup-survivors
   ;; create survivors
   create-survivors num-survivors
   [
@@ -43,7 +46,9 @@ to setup-turtles
     ;set sur
     ;set energy 1 + random sheep-max-initial-energy
   ]
+end
 
+to setup-helpers
   ask n-of centers center-patches [
     sprout-helpers 1 [
       set color blue
@@ -53,16 +58,17 @@ to setup-turtles
 end
 
 to disaster-strikes
+  
+  if damage-distribution = "normal" [
 
-  if disaster-type = "earthquake" [
-    print disaster-type
   ]
-  if disaster-type = "tsunami" [
-    print disaster-type
-  ]
+  
+  if damage-distribution = "exponential" [
 
-  if disaster-type = "hurricane" [
-    print disaster-type
+  ]
+  
+  if damage-distribution = "power law" [
+
   ]
 end
 
@@ -448,11 +454,11 @@ HORIZONTAL
 CHOOSER
 152
 188
-290
+304
 233
-disaster-type
-disaster-type
-"earthquake" "hurricane" "tsunami"
+damage-distribution
+damage-distribution
+"normal" "exponential" "power law"
 0
 
 @#$#@#$#@
