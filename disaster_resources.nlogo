@@ -58,17 +58,22 @@ to setup-helpers
 end
 
 to disaster-strikes
+  let mdv mean-damage-value
+  let sd SD-if-normal-dist
   
-  if damage-distribution = "normal" [
-
+  if damage-distribution = "normal" [ 
+   ask survivors [ set recovery-pts random-normal mdv sd ]
+   ; TODO color turtles here.
   ]
   
   if damage-distribution = "exponential" [
-
+    ask survivors [ set recovery-pts random-exponential mdv ]
+    ; TODO color turtles here.
   ]
   
   if damage-distribution = "power law" [
-
+    ask survivors [ set recovery-pts random-poisson mdv ]
+    ; TODO color turtles here.
   ]
 end
 
@@ -460,6 +465,36 @@ damage-distribution
 damage-distribution
 "normal" "exponential" "power law"
 0
+
+SLIDER
+12
+238
+150
+271
+mean-damage-value
+mean-damage-value
+0
+100
+50
+5
+1
+NIL
+HORIZONTAL
+
+SLIDER
+15
+197
+148
+230
+SD-if-normal-dist
+SD-if-normal-dist
+0
+100
+50
+5
+1
+NIL
+HORIZONTAL
 
 @#$#@#$#@
 @#$#@#$#@
