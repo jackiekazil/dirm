@@ -2,7 +2,7 @@ globals [
   center-patches
 ]
 
-turtles-own [ home-patch next-move ]
+turtles-own [ home-patch next-move capacity ]
 
 breed [survivors survivor]
 breed [helpers helper]
@@ -14,10 +14,11 @@ helpers-own [ h-type supplies ]
 
 to setup
   clear-all
-  setup-patches
-
-  setup-turtles
   reset-ticks
+  setup-patches
+  setup-turtles
+  
+  disaster-strikes
 end
 
 to setup-patches
@@ -36,6 +37,9 @@ to setup-turtles
     fd random 25
     setxy random-xcor random-ycor
     set home-patch patch-here
+    set survival-pts 100
+    set recovery-pts 100
+    
     ;set sur
     ;set energy 1 + random sheep-max-initial-energy
   ]
@@ -47,6 +51,21 @@ to setup-turtles
     ]
   ]
 end
+
+to disaster-strikes
+
+  if disaster-type = "earthquake" [
+    print disaster-type
+  ]
+  if disaster-type = "tsunami" [
+    print disaster-type
+  ]
+
+  if disaster-type = "hurricane" [
+    print disaster-type
+  ]
+end
+
 
 
 to go
@@ -178,7 +197,7 @@ num-survivors
 num-survivors
 0
 1000
-150
+5
 5
 1
 NIL
@@ -395,6 +414,46 @@ helpers-on-foot
 1
 NIL
 HORIZONTAL
+
+SLIDER
+984
+10
+1205
+43
+survivor-carrying-capacity
+survivor-carrying-capacity
+0
+100
+30
+5
+1
+NIL
+HORIZONTAL
+
+SLIDER
+961
+57
+1159
+90
+helper-supply-capacity
+helper-supply-capacity
+0
+5000
+2000
+25
+1
+NIL
+HORIZONTAL
+
+CHOOSER
+152
+188
+290
+233
+disaster-type
+disaster-type
+"earthquake" "hurricane" "tsunami"
+0
 
 @#$#@#$#@
 @#$#@#$#@
