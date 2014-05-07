@@ -28,6 +28,7 @@ end
 
 to setup-survivors   
   ; create survivors
+  set-default-shape survivors "default"
   create-survivors num-survivors
   [
     set color gray
@@ -94,25 +95,26 @@ to go
   tick
 end
 
-to wander
-  fd 1 lt random 50 rt random 50
-end
-
-to move
-  ;ifelse survival-pts > 50 [][]
-  ;ifelse reporter [ commands1 ] [ commands2 ]
-end
-
 
 ;survivors-own [ survival-pts recovery-pts]
 ;helpers-own [ h-type supplies ]
 
 to survivor-move
   ask survivors [
+    
  
     ;Survivors make a decision at the beginning of each tick -- survive or recover. 
     ;If < 2 days of supplies, then they look for survival supplies. 
     ;If more, then they look for recovery supplies
+    search-for-helper
+    
+    ask helpers in-cone 25 180 [print self]    
+    
+    
+    ;ask standers in-cone vision-radius vision-angle
+    
+    
+    
     
     ;If survivor is at max capacity, then they have to go home to drop off supplies
     
@@ -122,7 +124,17 @@ to survivor-move
     ; calculate left over survival points and die if appropriate.
     set survival-pts (survival-pts - cost-per-tick)
     if survival-pts = 0 [die]
+    
+    decide-next-survivor-move
     ]
+end
+
+to search-for-helper
+  fd 0.20 lt random 50 rt random 50
+end
+
+to decide-next-survivor-move
+  
 end
 
 to decide-helper-move
@@ -236,7 +248,7 @@ num-survivors
 num-survivors
 0
 1000
-1
+6
 1
 1
 NIL
@@ -380,30 +392,30 @@ NIL
 1
 
 SLIDER
-779
-56
-951
-89
+780
+266
+952
+299
 num-helpers
 num-helpers
 0
 1000
-255
+15
 5
 1
 NIL
 HORIZONTAL
 
 SLIDER
-779
-100
-951
-133
+781
+307
+953
+340
 centers
 centers
 0
 20
-5
+7
 1
 1
 NIL
@@ -440,10 +452,10 @@ TODO -- Add model title here
 1
 
 SLIDER
-779
-143
-951
-176
+1065
+529
+1237
+562
 helpers-on-foot
 helpers-on-foot
 0
@@ -470,10 +482,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-961
-57
-1159
-90
+937
+347
+1135
+380
 helper-supply-capacity
 helper-supply-capacity
 0
@@ -523,6 +535,32 @@ SD-if-normal-dist
 1
 NIL
 HORIZONTAL
+
+SLIDER
+783
+392
+998
+425
+total-system-supplies
+total-system-supplies
+0
+500000
+100000
+50
+1
+NIL
+HORIZONTAL
+
+SWITCH
+783
+347
+927
+380
+helper-mobile
+helper-mobile
+1
+1
+-1000
 
 @#$#@#$#@
 @#$#@#$#@

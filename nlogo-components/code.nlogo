@@ -28,6 +28,7 @@ end
 
 to setup-survivors
   ; create survivors
+  set-default-shape survivors "default"
   create-survivors num-survivors
   [
     set color gray
@@ -94,15 +95,6 @@ to go
   tick
 end
 
-to wander
-  fd 1 lt random 50 rt random 50
-end
-
-to move
-  ;ifelse survival-pts > 50 [][]
-  ;ifelse reporter [ commands1 ] [ commands2 ]
-end
-
 
 ;survivors-own [ survival-pts recovery-pts]
 ;helpers-own [ h-type supplies ]
@@ -110,9 +102,19 @@ end
 to survivor-move
   ask survivors [
 
+
     ;Survivors make a decision at the beginning of each tick -- survive or recover.
     ;If < 2 days of supplies, then they look for survival supplies.
     ;If more, then they look for recovery supplies
+    search-for-helper
+
+    ask helpers in-cone 25 180 [print self]
+
+
+    ;ask standers in-cone vision-radius vision-angle
+
+
+
 
     ;If survivor is at max capacity, then they have to go home to drop off supplies
 
@@ -122,7 +124,17 @@ to survivor-move
     ; calculate left over survival points and die if appropriate.
     set survival-pts (survival-pts - cost-per-tick)
     if survival-pts = 0 [die]
+
+    decide-next-survivor-move
     ]
+end
+
+to search-for-helper
+  fd 0.20 lt random 50 rt random 50
+end
+
+to decide-next-survivor-move
+
 end
 
 to decide-helper-move
