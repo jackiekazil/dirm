@@ -180,19 +180,50 @@ end
 
 to exchange-supplies [viablesurvivors local-h-type]
 
+   ; h-cap = the capacity of a helper
    let h-cap ([capacity] of self)
-   ; Choose one winner to get supplies this turn.
-   let winner (one-of viablesurvivors)
-   let s-cap ([capacity] of winner)
-   let s-need (survivor-carrying-capacity - s-cap)
 
+   ;; WINNER
+   ; Choose one winner to get supplies this turn from viablesurvivors.
+   let winner (one-of viablesurvivors)
+   ; s-cap = capacity of the winner (survivor)
+   let s-cap ([capacity] of winner)
+
+   ; s-need = the amount that the winner has the ability to carry.
+   ; so, if carrying capacity is 30 lbs, but the winner is already
+   ; carrying 10 lbs, then the s-need is 20 lbs.
+
+   let s-need 0
+   ifelse local-h-type = 0
+
+     ; Survival
+     [ let spw ([survival-pts] of winner)
+       ifelse spw <= 100
+         [ set s-need (survivor-carrying-capacity - s-cap)
+           if s-need > ( 100 - spw) [ set s-need ( 100 - spw )]]
+         [ set s-need 0] ]
+
+     ; Recovery
+     [ let rpw ([recovery-pts] of winner)
+       ifelse rpw <= 100
+         [ set s-need (survivor-carrying-capacity - s-cap)
+           if s-need > ( 100 - rpw) [ set s-need ( 100 - rpw )]]
+         [ set s-need 0] ]
+
+   ; if the helper capacity is greater than the survivor need
    ifelse h-cap > s-need [
+      ; then set the helper capacity to helper capacity minus the survivor need
       set h-cap (h-cap - s-need)
+      ; set survivor capacity to previous capacity and survivor need
       set s-cap (s-cap + s-need)
       ][
+      ;else
+      ; set survivor capacity to helper capacity -- meaning the survivor takes what the helper has left
       set s-cap h-cap
+      ; set the helper's capacity to zero
       set h-cap 0
       ]
+
    ask self [set capacity h-cap]
    ask winner [
      set capacity s-cap
@@ -218,11 +249,13 @@ to go-to-refill
 end
 
 to do-plotting
-  set-current-plot "Avg. Life"
+  set-current-plot "Avg. system values"
   if any? survivors [
-    set-current-plot-pen "survival"
+    set-current-plot-pen "% agents alive"
+    plot (count survivors / num-survivors * 100)
+    set-current-plot-pen "avg survival pts"
     plot mean [ survival-pts ] of survivors]
-    set-current-plot-pen "recovery"
+    set-current-plot-pen "avg recovery pts"
     plot mean [ recovery-pts ] of survivors
 
 
