@@ -1,21 +1,25 @@
 globals [
   center-patches
   cost-per-tick
+  cost-per-day
+  movement-fwd
+  capacity-setting
 ]
 
-turtles-own [ home-patch next-move capacity ]
+turtles-own [ home-patch current-need capacity ]
 
 breed [survivors survivor]
 breed [helpers helper]
 
 survivors-own [ survival-pts recovery-pts]
-helpers-own [ h-type supplies ]
+helpers-own [ h-type ]
 ; h-type is the type of helper
   ; 1 is life sustaining, 2 is rebuilding & recovery
 
 to setup
   clear-all
   reset-ticks
+  set movement-fwd 1
   setup-survivors
   disaster-strikes
   
@@ -32,7 +36,6 @@ to setup-survivors
   create-survivors num-survivors
   [
     set color gray
-    fd random 25
     setxy random-xcor random-ycor
     set home-patch patch-here
     set survival-pts 100
@@ -41,26 +44,36 @@ to setup-survivors
   
   ; cost on survivor points per tick
   ; survivor days is the number of days that an individual can survive without water
-  let survivor-days 4
-  set cost-per-tick (100 / survivor-days / 16)
+  let survivor-days random-normal 3 2  ;Survives 4 days, but this can vary greatly
+  set cost-per-day (100 / survivor-days)
+  set cost-per-tick (cost-per-day / 16)
+  
 end
 
 to setup-patches
   ;; setup centers
   ask n-of centers patches
-    [set pcolor green]
-  set center-patches patches with [pcolor = green]
+    [set pcolor orange]
+  set center-patches patches with [pcolor = orange]
 end
 
 to setup-helpers
   ; Only sprout helpers if we haven't reached out helper count
   let helper-count 0
+  let possible-cap-of-helper (total-system-supplies / num-helpers)
+  ifelse possible-cap-of-helper > helper-supply-capacity 
+    [ set capacity-setting helper-supply-capacity ]
+    [ set capacity-setting possible-cap-of-helper ]
   ask center-patches [
-    if helper-count < num-helpers [
+    while [helper-count < num-helpers] [
       sprout-helpers 1 [
         set color yellow
-        set supplies helper-supply-capacity  ; how much a helper can carry
-                                             ;set h-type  ; the type of helper it is.
+        set capacity capacity-setting  ; how much a helper can carry
+                       
+        set h-type random 2                  ; if h-type is 0, then survival supplies. if 1, then recovery.
+        set home-patch patch-here
+        
+        setxy random-xcor random-ycor
       ]
       set helper-count (helper-count + 1)
     ]
@@ -87,80 +100,144 @@ to disaster-strikes
   ]
 end
 
-
+to go-once
+  ask survivors [ survivor-move ]
+  ask helpers [ helper-move]
+end
 
 to go
-  ask survivors [ survivor-move ]
-  ask helpers [ decide-helper-move ]
+  if not any? survivors [stop]  
+  do-plotting
+  go-once
   tick
 end
 
 
-;survivors-own [ survival-pts recovery-pts]
-;helpers-own [ h-type supplies ]
-
 to survivor-move
-  ask survivors [
-    
- 
-    ;Survivors make a decision at the beginning of each tick -- survive or recover. 
-    ;If < 2 days of supplies, then they look for survival supplies. 
-    ;If more, then they look for recovery supplies
-    search-for-helper
-    
-    ask helpers in-cone 25 180 [print self]    
-    
-    
-    ;ask standers in-cone vision-radius vision-angle
-    
-    
-    
-    
-    ;If survivor is at max capacity, then they have to go home to drop off supplies
-    
-    ;if S meets H-S, then they take what they can carry. If there are multiple agents, then the supplies are split equally.
-    ;If S meets H-R, then they earn some value between 1 to 5. 
- 
-    ; calculate left over survival points and die if appropriate.
-    set survival-pts (survival-pts - cost-per-tick)
-    if survival-pts = 0 [die]
-    
-    decide-next-survivor-move
-    ]
-end
-
-to search-for-helper
-  fd 0.20 lt random 50 rt random 50
-end
-
-to decide-next-survivor-move
+  ; color oneself
+  color-myself
   
+  ;; DECIDE NEXT MOVE
+  ;current-need 0 = needs survival supplies
+  ;current-need 1 = needs recovery supplies
+  ;current-need 2 = needs to go home to drop off supplies
+  ifelse (patch-here = home-patch) and (capacity >= survivor-carrying-capacity) [set capacity 0][
+    ; if what the survivor is carrying is more than their capactiy, then they need to return home for a drop off
+    ifelse capacity >= survivor-carrying-capacity [ set current-need 2 ][
+      ifelse survival-pts < (2 * cost-per-day) 
+      [set current-need 0]   ; if our survival pts are less than 2 days of supplies, we need survival supplies
+      [set current-need 1]   ; if greater than or equal to, then we need recovery supplies
+    ]
+    ; TODO: ? Add memory and less to 1 day if they know where supplies are?
+    ;TODO add cone of vision?
+    ;ask standers in-cone vision-radius vision-angle
+    ;ask helpers in-cone agent-vision-distance 180 [print self]
+    
+    ;; EXECUTE MOVE
+    ifelse current-need = 2 [ set heading towards home-patch ] [
+      let viable-helpers (helpers with [h-type = current-need])
+      let nearest-neighbor min-one-of viable-helpers [ distance myself ]
+      ;set destination [list xcor ycor] of nearest-neighbor
+      set heading towards nearest-neighbor
+    ]
+    fd movement-fwd
+  ]
+
+  ;; DEDUCT SURVIVAL POINTS
+  ; calculate left over survival points and die if appropriate.
+  set survival-pts (survival-pts - cost-per-tick)
+  if survival-pts < 5 [die]
+
 end
 
-to decide-helper-move
-  ;Mobile agent has to return to supply depot, when they are out of supplies. 
+to color-myself
+  ifelse survival-pts > 75 [ set color 64 ]
+    [ ifelse (75 <= survival-pts) and  (survival-pts > 50) [ set color 66 ]
+      [ ifelse (50 <= survival-pts) and  (survival-pts > 25) [ set color 68 ]
+        [ set color gray ] ] ]
 end
 
+to helper-move
+    set label round(capacity)
+    let need ([h-type] of self)
 
+    let viable-survivors-here survivors-here with [current-need = need]
+    let viable-survivors survivors with [current-need = need]
+    
+    ifelse capacity = 0 [
+      ifelse patch-here = home-patch [ set capacity capacity-setting ][ go-to-refill ] 
+      ][
+      ifelse any? viable-survivors-here
+          [exchange-supplies viable-survivors-here h-type]
+          [ifelse any? viable-survivors
+            [find-survivors self]
+            [fd movement-fwd]
+          ]
+      ]
+    
+    
+end
 
-;todo
-;function that directs survivors on a turn
-;see helper - move towards them
-;memory?
+to exchange-supplies [viablesurvivors local-h-type]
+   
+   let h-cap ([capacity] of self) 
+   ; Choose one winner to get supplies this turn.
+   let winner (one-of viablesurvivors)
+   let s-cap ([capacity] of winner)
+   let s-need (survivor-carrying-capacity - s-cap)
+     
+   ifelse h-cap > s-need [
+      set h-cap (h-cap - s-need)
+      set s-cap (s-cap + s-need)
+      ][
+      set s-cap h-cap
+      set h-cap 0
+      ]
+   ask self [set capacity h-cap]
+   ask winner [
+     set capacity s-cap
+     ifelse local-h-type = 0 [set survival-pts (survival-pts + s-cap)] [set recovery-pts (recovery-pts + s-cap)]
+     
+     ]
 
-;todo
-;function that directors helpers on a turn
-;see person who needs help -- move towards them
-;memory?
+end
 
+to find-survivors [h-in-action]
+  ;find vialabe-survivors, find the closest one, set heading to the closest, then move
+  let need ([h-type] of h-in-action)
+  ;ask survivors [ print [current-need] of self ]
+  let viable-survivors survivors with [current-need = need]
+  let nearest-neighbor min-one-of viable-survivors [ distance myself ]
+  set heading towards nearest-neighbor
+  fd movement-fwd
+end
 
-;todo
-;estimate and apply damage points by disaster pattern
-; include random
+to go-to-refill
+  set heading towards home-patch
+  fd movement-fwd
+end
 
-;todo
-;plots to create
+to do-plotting
+  set-current-plot "Avg. Life"
+  if any? survivors [
+    set-current-plot-pen "survival"
+    plot mean [ survival-pts ] of survivors]
+    set-current-plot-pen "recovery"
+    plot mean [ recovery-pts ] of survivors
+    
+    
 
+  ;set-current-plot "Level of Awareness"
+  ;set-current-plot-pen "Activist"
+  ;  plot count turtles with [ activist? ]
+  ;set-current-plot-pen "Well Informed"
+  ;  plot count turtles with [ well-informed? ]
+  ;set-current-plot-pen "Aware"
+  ;  plot count turtles with [ aware? ]
+  ;set-current-plot-pen "Unaware"
+  ;  plot count turtles with [ unaware? ]
+
+end
 
 
 
@@ -168,13 +245,13 @@ end
 
 @#$#@#$#@
 GRAPHICS-WINDOW
-314
+310
 10
-768
-497
+894
+615
 -1
 -1
-12.0
+11.255
 1
 10
 1
@@ -185,20 +262,20 @@ GRAPHICS-WINDOW
 1
 1
 0
-36
+50
 0
-37
-1
-1
+50
+0
+0
 1
 ticks
 30.0
 
 BUTTON
-199
-74
-264
+184
 107
+249
+140
 setup
 setup
 NIL
@@ -212,10 +289,10 @@ NIL
 1
 
 BUTTON
-197
-122
-262
-155
+183
+141
+248
+174
 go
 go
 T
@@ -231,191 +308,117 @@ NIL
 MONITOR
 10
 285
-75
+82
 330
-Activist
-count turtles with [color = 64]
-2
+survivors
+count survivors
+0
 1
 11
 
 SLIDER
-777
-14
-948
-47
+906
+261
+1077
+294
 num-survivors
 num-survivors
 0
-1000
-6
+10000
+10000
 1
 1
 NIL
 HORIZONTAL
 
 MONITOR
-235
-285
-305
-330
-Unaware
-count turtles with [color = gray]
-3
-1
-11
-
-PLOT
-774
-436
-1069
-586
-Level of Awareness
-Time
-Amount
-0.0
-3.0
-0.0
-10.0
-true
-true
-"" ""
-PENS
-"Activist" 1.0 0 -14439633 true "" ""
-"Well Informed" 1.0 0 -11085214 true "" ""
-"Aware" 1.0 0 -5509967 true "" ""
-"Unaware" 1.0 0 -7500403 true "" ""
-
-MONITOR
 10
-345
+334
 110
-390
-Avg. Awareness
-mean [awareness] of turtles
-3
+379
+Avg. life
+mean [survival-pts] of survivors
+0
 1
 11
 
 PLOT
-110
-345
-305
-510
-Avg. Awareness
+9
+387
+307
+552
+Avg. Life
 Time
-Avg. awareness
+Avg. values
 0.0
 50.0
 0.0
 20.0
 true
-false
+true
 "" ""
 PENS
-"Awareness" 1.0 0 -16777216 true "" ""
+"survival" 1.0 0 -14454117 true "" ""
+"recovery" 1.0 0 -7713188 true "" ""
 
 MONITOR
 75
 285
 165
 330
-Well Informed
-count turtles with [color = 66]
-3
+S-helpers
+count helpers with [h-type = 0]
+0
 1
 11
 
 MONITOR
 165
 285
-235
+239
 330
-Aware
-count turtles with [color = 68]
-3
+R-helpers
+count helpers with [h-type = 1]
+0
 1
 11
 
 MONITOR
-10
-410
-110
-455
+114
+333
+214
+378
 Centers
 count patches with [ pcolor != black ]
 3
 1
 11
 
-MONITOR
-10
-455
-110
-500
-Avg. Non-usage
-mean [non-usage] of patches with [ pcolor != black ]
-3
-1
-11
-
 SLIDER
-234
-522
-409
-555
-non-usage-limit
-non-usage-limit
-0
-500
-100
-5
-1
-ticks
-HORIZONTAL
-
-BUTTON
-55
-527
-165
-560
-NIL
-place-centers
-T
-1
-T
-OBSERVER
-NIL
-NIL
-NIL
-NIL
-1
-
-SLIDER
-780
-266
-952
-299
+905
+304
+1077
+337
 num-helpers
 num-helpers
 0
 1000
-15
+95
 5
 1
 NIL
 HORIZONTAL
 
 SLIDER
-781
-307
-953
-340
+906
+345
+1078
+378
 centers
 centers
 0
 20
-7
+11
 1
 1
 NIL
@@ -442,20 +445,20 @@ _____________________________________________________
 1
 
 TEXTBOX
-8
-30
-270
-64
-TODO -- Add model title here
+10
+40
+272
+74
+Disaster resource distribution model
 14
 93.0
 1
 
 SLIDER
-1065
-529
-1237
-562
+907
+470
+1079
+503
 helpers-on-foot
 helpers-on-foot
 0
@@ -467,10 +470,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-984
-10
-1205
-43
+911
+213
+1132
+246
 survivor-carrying-capacity
 survivor-carrying-capacity
 0
@@ -482,15 +485,15 @@ NIL
 HORIZONTAL
 
 SLIDER
-937
-347
-1135
-380
+907
+511
+1105
+544
 helper-supply-capacity
 helper-supply-capacity
 0
 5000
-2000
+4775
 25
 1
 NIL
@@ -537,30 +540,87 @@ NIL
 HORIZONTAL
 
 SLIDER
-783
-392
-998
-425
+908
+430
+1123
+463
 total-system-supplies
 total-system-supplies
 0
 500000
-100000
+455000
 50
 1
 NIL
 HORIZONTAL
 
 SWITCH
-783
-347
-927
-380
+908
+385
+1052
+418
 helper-mobile
 helper-mobile
-1
+0
 1
 -1000
+
+MONITOR
+161
+235
+218
+280
+ticks
+ticks
+17
+1
+11
+
+BUTTON
+185
+72
+248
+105
+go 1x
+go-once
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
+
+MONITOR
+217
+332
+312
+377
+Avg recovery
+mean [recovery-pts] of survivors
+0
+1
+11
+
+PLOT
+905
+12
+1211
+211
+Number of living turtles
+NIL
+NIL
+0.0
+10.0
+0.0
+10.0
+true
+false
+"" ""
+PENS
+"number of turtles" 1.0 0 -12895429 true "" "plot count turtles"
 
 @#$#@#$#@
 @#$#@#$#@

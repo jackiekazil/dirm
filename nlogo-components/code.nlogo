@@ -1,21 +1,25 @@
 globals [
   center-patches
   cost-per-tick
+  cost-per-day
+  movement-fwd
+  capacity-setting
 ]
 
-turtles-own [ home-patch next-move capacity ]
+turtles-own [ home-patch current-need capacity ]
 
 breed [survivors survivor]
 breed [helpers helper]
 
 survivors-own [ survival-pts recovery-pts]
-helpers-own [ h-type supplies ]
+helpers-own [ h-type ]
 ; h-type is the type of helper
   ; 1 is life sustaining, 2 is rebuilding & recovery
 
 to setup
   clear-all
   reset-ticks
+  set movement-fwd 1
   setup-survivors
   disaster-strikes
 
@@ -32,7 +36,6 @@ to setup-survivors
   create-survivors num-survivors
   [
     set color gray
-    fd random 25
     setxy random-xcor random-ycor
     set home-patch patch-here
     set survival-pts 100
@@ -41,26 +44,36 @@ to setup-survivors
 
   ; cost on survivor points per tick
   ; survivor days is the number of days that an individual can survive without water
-  let survivor-days 4
-  set cost-per-tick (100 / survivor-days / 16)
+  let survivor-days random-normal 3 2  ;Survives 4 days, but this can vary greatly
+  set cost-per-day (100 / survivor-days)
+  set cost-per-tick (cost-per-day / 16)
+
 end
 
 to setup-patches
   ;; setup centers
   ask n-of centers patches
-    [set pcolor green]
-  set center-patches patches with [pcolor = green]
+    [set pcolor orange]
+  set center-patches patches with [pcolor = orange]
 end
 
 to setup-helpers
   ; Only sprout helpers if we haven't reached out helper count
   let helper-count 0
+  let possible-cap-of-helper (total-system-supplies / num-helpers)
+  ifelse possible-cap-of-helper > helper-supply-capacity
+    [ set capacity-setting helper-supply-capacity ]
+    [ set capacity-setting possible-cap-of-helper ]
   ask center-patches [
-    if helper-count < num-helpers [
+    while [helper-count < num-helpers] [
       sprout-helpers 1 [
         set color yellow
-        set supplies helper-supply-capacity  ; how much a helper can carry
-                                             ;set h-type  ; the type of helper it is.
+        set capacity capacity-setting  ; how much a helper can carry
+
+        set h-type random 2                  ; if h-type is 0, then survival supplies. if 1, then recovery.
+        set home-patch patch-here
+
+        setxy random-xcor random-ycor
       ]
       set helper-count (helper-count + 1)
     ]
@@ -87,81 +100,144 @@ to disaster-strikes
   ]
 end
 
-
+to go-once
+  ask survivors [ survivor-move ]
+  ask helpers [ helper-move]
+end
 
 to go
-  ask survivors [ survivor-move ]
-  ask helpers [ decide-helper-move ]
+  if not any? survivors [stop]
+  do-plotting
+  go-once
   tick
 end
 
 
-;survivors-own [ survival-pts recovery-pts]
-;helpers-own [ h-type supplies ]
-
 to survivor-move
-  ask survivors [
+  ; color oneself
+  color-myself
 
-
-    ;Survivors make a decision at the beginning of each tick -- survive or recover.
-    ;If < 2 days of supplies, then they look for survival supplies.
-    ;If more, then they look for recovery supplies
-    search-for-helper
-
-    ask helpers in-cone 25 180 [print self]
-
-
-    ;ask standers in-cone vision-radius vision-angle
-
-
-
-
-    ;If survivor is at max capacity, then they have to go home to drop off supplies
-
-    ;if S meets H-S, then they take what they can carry. If there are multiple agents, then the supplies are split equally.
-    ;If S meets H-R, then they earn some value between 1 to 5.
-
-    ; calculate left over survival points and die if appropriate.
-    set survival-pts (survival-pts - cost-per-tick)
-    if survival-pts = 0 [die]
-
-    decide-next-survivor-move
+  ;; DECIDE NEXT MOVE
+  ;current-need 0 = needs survival supplies
+  ;current-need 1 = needs recovery supplies
+  ;current-need 2 = needs to go home to drop off supplies
+  ifelse (patch-here = home-patch) and (capacity >= survivor-carrying-capacity) [set capacity 0][
+    ; if what the survivor is carrying is more than their capactiy, then they need to return home for a drop off
+    ifelse capacity >= survivor-carrying-capacity [ set current-need 2 ][
+      ifelse survival-pts < (2 * cost-per-day)
+      [set current-need 0]   ; if our survival pts are less than 2 days of supplies, we need survival supplies
+      [set current-need 1]   ; if greater than or equal to, then we need recovery supplies
     ]
+    ; TODO: ? Add memory and less to 1 day if they know where supplies are?
+    ;TODO add cone of vision?
+    ;ask standers in-cone vision-radius vision-angle
+    ;ask helpers in-cone agent-vision-distance 180 [print self]
+
+    ;; EXECUTE MOVE
+    ifelse current-need = 2 [ set heading towards home-patch ] [
+      let viable-helpers (helpers with [h-type = current-need])
+      let nearest-neighbor min-one-of viable-helpers [ distance myself ]
+      ;set destination [list xcor ycor] of nearest-neighbor
+      set heading towards nearest-neighbor
+    ]
+    fd movement-fwd
+  ]
+
+  ;; DEDUCT SURVIVAL POINTS
+  ; calculate left over survival points and die if appropriate.
+  set survival-pts (survival-pts - cost-per-tick)
+  if survival-pts < 5 [die]
+
 end
 
-to search-for-helper
-  fd 0.20 lt random 50 rt random 50
+to color-myself
+  ifelse survival-pts > 75 [ set color 64 ]
+    [ ifelse (75 <= survival-pts) and  (survival-pts > 50) [ set color 66 ]
+      [ ifelse (50 <= survival-pts) and  (survival-pts > 25) [ set color 68 ]
+        [ set color gray ] ] ]
 end
 
-to decide-next-survivor-move
+to helper-move
+    set label round(capacity)
+    let need ([h-type] of self)
+
+    let viable-survivors-here survivors-here with [current-need = need]
+    let viable-survivors survivors with [current-need = need]
+
+    ifelse capacity = 0 [
+      ifelse patch-here = home-patch [ set capacity capacity-setting ][ go-to-refill ]
+      ][
+      ifelse any? viable-survivors-here
+          [exchange-supplies viable-survivors-here h-type]
+          [ifelse any? viable-survivors
+            [find-survivors self]
+            [fd movement-fwd]
+          ]
+      ]
+
 
 end
 
-to decide-helper-move
-  ;Mobile agent has to return to supply depot, when they are out of supplies.
+to exchange-supplies [viablesurvivors local-h-type]
+
+   let h-cap ([capacity] of self)
+   ; Choose one winner to get supplies this turn.
+   let winner (one-of viablesurvivors)
+   let s-cap ([capacity] of winner)
+   let s-need (survivor-carrying-capacity - s-cap)
+
+   ifelse h-cap > s-need [
+      set h-cap (h-cap - s-need)
+      set s-cap (s-cap + s-need)
+      ][
+      set s-cap h-cap
+      set h-cap 0
+      ]
+   ask self [set capacity h-cap]
+   ask winner [
+     set capacity s-cap
+     ifelse local-h-type = 0 [set survival-pts (survival-pts + s-cap)] [set recovery-pts (recovery-pts + s-cap)]
+
+     ]
+
 end
 
+to find-survivors [h-in-action]
+  ;find vialabe-survivors, find the closest one, set heading to the closest, then move
+  let need ([h-type] of h-in-action)
+  ;ask survivors [ print [current-need] of self ]
+  let viable-survivors survivors with [current-need = need]
+  let nearest-neighbor min-one-of viable-survivors [ distance myself ]
+  set heading towards nearest-neighbor
+  fd movement-fwd
+end
+
+to go-to-refill
+  set heading towards home-patch
+  fd movement-fwd
+end
+
+to do-plotting
+  set-current-plot "Avg. Life"
+  if any? survivors [
+    set-current-plot-pen "survival"
+    plot mean [ survival-pts ] of survivors]
+    set-current-plot-pen "recovery"
+    plot mean [ recovery-pts ] of survivors
 
 
-;todo
-;function that directs survivors on a turn
-;see helper - move towards them
-;memory?
 
-;todo
-;function that directors helpers on a turn
-;see person who needs help -- move towards them
-;memory?
+  ;set-current-plot "Level of Awareness"
+  ;set-current-plot-pen "Activist"
+  ;  plot count turtles with [ activist? ]
+  ;set-current-plot-pen "Well Informed"
+  ;  plot count turtles with [ well-informed? ]
+  ;set-current-plot-pen "Aware"
+  ;  plot count turtles with [ aware? ]
+  ;set-current-plot-pen "Unaware"
+  ;  plot count turtles with [ unaware? ]
 
-
-;todo
-;estimate and apply damage points by disaster pattern
-; include random
-
-;todo
-;plots to create
-
-
+end
 
 
 
