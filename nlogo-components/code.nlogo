@@ -83,7 +83,7 @@ to setup-helpers
   while [helper-count < num-helpers] [
     ask center-patches [
         sprout-helpers 1 [
-        set color 45
+        set color 27
         set capacity capacity-setting  ; how much a helper can carry
 
         set h-type random 2                  ; if h-type is 0, then survival supplies. if 1, then recovery.
@@ -199,13 +199,15 @@ to survivor-move
       set heading towards nearest-neighbor
     ]
     fd movement-fwd
+    set distance-traveled (distance-traveled + 1)
   ]
 
   ;; DEDUCT SURVIVAL POINTS
   ; calculate left over survival points and die if appropriate.
   set survival-pts (survival-pts - cost-per-tick)
-  if survival-pts < 5 [die]
-
+  if survival-pts < 5 [
+    ask home-patch [ set pcolor 1 ]
+    die ] ; we do less than 5 b/c we had some straggles when we set at 0.
 end
 
 to display-myself
@@ -216,8 +218,6 @@ to display-myself
     [ ifelse (75 <= survival-pts) and  (survival-pts > 50) [ set color 66 ]
       [ ifelse (50 <= survival-pts) and  (survival-pts > 25) [ set color 68 ]
         [ set color gray ] ] ]
-
-
 end
 
 
@@ -270,17 +270,15 @@ to exchange-supplies [viablesurvivors local-h-type]
          [ set s-need (survivor-carrying-capacity - s-cap)
            if s-need >= ( 100 - spw) [ set s-need ( 100 - spw )]
            ]
-
          [ set s-need 0] ]
 
+   ; Recovery
+   [ let rpw ([recovery-pts] of winner)
 
-     ; Recovery
-     [ let rpw ([recovery-pts] of winner)
-
-       ifelse rpw <= 100
-         [ set s-need (survivor-carrying-capacity - s-cap)
-           if s-need >= ( 100 - rpw) [ set s-need ( 100 - rpw )]]
-         [ set s-need 0] ]
+     ifelse rpw <= 100
+       [ set s-need (survivor-carrying-capacity - s-cap)
+         if s-need >= ( 100 - rpw) [ set s-need ( 100 - rpw )]]
+       [ set s-need 0] ]
 
    ; if the helper capacity is greater than the survivor need
    ifelse h-cap > s-need [
@@ -331,8 +329,15 @@ to do-plotting
     plot mean [ recovery-pts ] of survivors
   ]
 
+  ; Plot distance distribution
+  set-current-plot "Survivor Distance Traveled"
+  set-current-plot-pen "distance-traveled"
+  let s-traveled ([distance-traveled] of survivors)
+  histogram s-traveled
+  let maxbar modes [distance-traveled] of survivors
+  let maxrange filter [ ? = item 0 maxbar ] [distance-traveled] of survivors
+  set-plot-y-range 0 ((length maxrange) * 3)
+  set-plot-pen-mode 1
+  set-histogram-num-bars 20
+
 end
-
-
-
-

@@ -83,7 +83,7 @@ to setup-helpers
   while [helper-count < num-helpers] [
     ask center-patches [
         sprout-helpers 1 [
-        set color 45
+        set color 27
         set capacity capacity-setting  ; how much a helper can carry
                        
         set h-type random 2                  ; if h-type is 0, then survival supplies. if 1, then recovery.
@@ -205,8 +205,9 @@ to survivor-move
   ;; DEDUCT SURVIVAL POINTS
   ; calculate left over survival points and die if appropriate.
   set survival-pts (survival-pts - cost-per-tick)
-  if survival-pts < 5 [die]
-
+  if survival-pts < 5 [
+    ask home-patch [ set pcolor 1 ]
+    die ] ; we do less than 5 b/c we had some straggles when we set at 0.
 end
 
 to display-myself
@@ -217,8 +218,6 @@ to display-myself
     [ ifelse (75 <= survival-pts) and  (survival-pts > 50) [ set color 66 ]
       [ ifelse (50 <= survival-pts) and  (survival-pts > 25) [ set color 68 ]
         [ set color gray ] ] ]
-  
- 
 end
 
 
@@ -270,18 +269,16 @@ to exchange-supplies [viablesurvivors local-h-type]
        ifelse spw <= 100
          [ set s-need (survivor-carrying-capacity - s-cap) 
            if s-need >= ( 100 - spw) [ set s-need ( 100 - spw )]
-           ]
-           
+           ]        
          [ set s-need 0] ]
-     
-     
-     ; Recovery
-     [ let rpw ([recovery-pts] of winner)
+   
+   ; Recovery
+   [ let rpw ([recovery-pts] of winner)
 
-       ifelse rpw <= 100
-         [ set s-need (survivor-carrying-capacity - s-cap)
-           if s-need >= ( 100 - rpw) [ set s-need ( 100 - rpw )]]
-         [ set s-need 0] ]
+     ifelse rpw <= 100
+       [ set s-need (survivor-carrying-capacity - s-cap)
+         if s-need >= ( 100 - rpw) [ set s-need ( 100 - rpw )]]
+       [ set s-need 0] ]
 
    ; if the helper capacity is greater than the survivor need  
    ifelse h-cap > s-need [
@@ -335,18 +332,15 @@ to do-plotting
   ; Plot distance distribution
   set-current-plot "Survivor Distance Traveled"
   set-current-plot-pen "distance-traveled"
-  histogram [distance-traveled] of survivors
+  let s-traveled ([distance-traveled] of survivors)
+  histogram s-traveled
   let maxbar modes [distance-traveled] of survivors
   let maxrange filter [ ? = item 0 maxbar ] [distance-traveled] of survivors
-  set-plot-y-range 0 length maxrange
-  
-  ;set-current-plot-pen "blues" histogram-from turtles with [ true ] [
-  ;  int assets]
-  ;set-current-plot-pen "reds" histogram-from turtles with [ color =
-  ;  red ] [ int assets ]
+  set-plot-y-range 0 ((length maxrange) * 3)
+  set-plot-pen-mode 1
+  set-histogram-num-bars 20
   
 end
-
 
 
 
@@ -379,9 +373,9 @@ ticks
 30.0
 
 BUTTON
-184
+185
 107
-249
+250
 140
 setup
 setup
@@ -431,8 +425,8 @@ SLIDER
 num-survivors
 num-survivors
 1
-10000
-1027
+5000
+2340
 1
 1
 NIL
@@ -490,8 +484,8 @@ SLIDER
 num-helpers
 num-helpers
 1
-1000
-66
+500
+446
 5
 1
 NIL
@@ -506,7 +500,7 @@ centers
 centers
 1
 20
-9
+2
 1
 1
 NIL
@@ -551,7 +545,7 @@ survivor-carrying-capacity
 survivor-carrying-capacity
 1
 100
-11
+6
 5
 1
 NIL
@@ -566,7 +560,7 @@ helper-supply-capacity
 helper-supply-capacity
 1
 5000
-2651
+2401
 25
 1
 NIL
@@ -580,7 +574,7 @@ CHOOSER
 damage-distribution
 damage-distribution
 "normal" "exponential" "power law"
-2
+0
 
 SLIDER
 12
@@ -621,7 +615,7 @@ total-system-supplies
 total-system-supplies
 1
 500000
-455000
+454251
 50
 1
 NIL
@@ -684,7 +678,7 @@ true
 PENS
 "100" 1.0 0 -1513240 true "" "plot 100"
 "50" 1.0 0 -4539718 true "" "plot 50"
-"% agents alive" 1.0 0 -13840069 true "" ""
+"% agents alive" 1.0 0 -10899396 true "" ""
 "avg survival pts" 1.0 0 -13791810 true "" ""
 "avg recovery pts" 1.0 0 -4699768 true "" ""
 
@@ -719,7 +713,7 @@ SLIDER
 %-helpers-mobile
 0
 100
-100
+15
 5
 1
 NIL
@@ -743,15 +737,15 @@ SWITCH
 626
 hide-helpers?
 hide-helpers?
-0
+1
 1
 -1000
 
 PLOT
-1007
-268
-1418
-418
+962
+65
+1373
+215
 Survivor Distance Traveled
 distance traveled
 occurrences
