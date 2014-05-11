@@ -91,7 +91,7 @@ to setup-helpers
 end
 
 to disaster-strikes
-  let mdv mean-damage-value
+  let mdv (100 - mean-damage-value)
   let sd SD-if-normal-dist
   
   if damage-distribution = "normal" [ 
@@ -112,6 +112,11 @@ end
 
 to go-once
 
+
+  
+  ask survivors with [recovered? = False] [ survivor-move ]
+  ask helpers [ helper-move]
+  
   ask survivors [ 
    if survival-pts >= 100 [
      set survival-pts 100
@@ -125,16 +130,14 @@ to go-once
      ]
    ] 
   ]
-  
-  ask survivors with [recovered? = False] [ survivor-move ]
-  ask helpers [ helper-move]
+
+  do-plotting
+  tick
 end
 
 to go
   if not any? survivors [stop]
   go-once
-  do-plotting
-  tick
 end
 
 
@@ -226,12 +229,7 @@ to exchange-supplies [viablesurvivors local-h-type]
      [ let spw ([survival-pts] of winner)
        ifelse spw <= 100
          [ set s-need (survivor-carrying-capacity - s-cap) 
-           print "########################"
-           print s-need
-           print survivor-carrying-capacity
-           print s-cap
            if s-need >= ( 100 - spw) [ set s-need ( 100 - spw )]
-           print s-need
            ]
            
          [ set s-need 0] ]
@@ -295,18 +293,7 @@ to do-plotting
     plot mean [ recovery-pts ] of survivors
   ]
   
-    
-    
 
-  ;set-current-plot "Level of Awareness"
-  ;set-current-plot-pen "Activist"
-  ;  plot count turtles with [ activist? ]
-  ;set-current-plot-pen "Well Informed"
-  ;  plot count turtles with [ well-informed? ]
-  ;set-current-plot-pen "Aware"
-  ;  plot count turtles with [ aware? ]
-  ;set-current-plot-pen "Unaware"
-  ;  plot count turtles with [ unaware? ]
 
 end
 
@@ -395,7 +382,7 @@ num-survivors
 num-survivors
 0
 10000
-64
+128
 1
 1
 NIL
@@ -454,7 +441,7 @@ num-helpers
 num-helpers
 0
 1000
-390
+565
 5
 1
 NIL
@@ -544,7 +531,7 @@ helper-supply-capacity
 helper-supply-capacity
 0
 5000
-1600
+50
 25
 1
 NIL
@@ -558,7 +545,7 @@ CHOOSER
 damage-distribution
 damage-distribution
 "normal" "exponential" "power law"
-0
+2
 
 SLIDER
 12
@@ -569,7 +556,7 @@ mean-damage-value
 mean-damage-value
 0
 100
-50
+45
 5
 1
 NIL
@@ -584,7 +571,7 @@ SD-if-normal-dist
 SD-if-normal-dist
 0
 100
-50
+25
 5
 1
 NIL
@@ -671,7 +658,9 @@ true
 true
 "" ""
 PENS
-"% agents alive" 1.0 0 -14439633 true "" ""
+"100" 1.0 0 -1513240 true "" "plot 100"
+"50" 1.0 0 -4539718 true "" "plot 50"
+"% agents alive" 1.0 0 -13840069 true "" ""
 "avg survival pts" 1.0 0 -13791810 true "" ""
 "avg recovery pts" 1.0 0 -4699768 true "" ""
 

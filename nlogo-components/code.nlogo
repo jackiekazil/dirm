@@ -91,7 +91,7 @@ to setup-helpers
 end
 
 to disaster-strikes
-  let mdv mean-damage-value
+  let mdv (100 - mean-damage-value)
   let sd SD-if-normal-dist
 
   if damage-distribution = "normal" [
@@ -112,6 +112,11 @@ end
 
 to go-once
 
+
+
+  ask survivors with [recovered? = False] [ survivor-move ]
+  ask helpers [ helper-move]
+
   ask survivors [
    if survival-pts >= 100 [
      set survival-pts 100
@@ -126,15 +131,13 @@ to go-once
    ]
   ]
 
-  ask survivors with [recovered? = False] [ survivor-move ]
-  ask helpers [ helper-move]
+  do-plotting
+  tick
 end
 
 to go
   if not any? survivors [stop]
   go-once
-  do-plotting
-  tick
 end
 
 
@@ -226,12 +229,7 @@ to exchange-supplies [viablesurvivors local-h-type]
      [ let spw ([survival-pts] of winner)
        ifelse spw <= 100
          [ set s-need (survivor-carrying-capacity - s-cap)
-           print "########################"
-           print s-need
-           print survivor-carrying-capacity
-           print s-cap
            if s-need >= ( 100 - spw) [ set s-need ( 100 - spw )]
-           print s-need
            ]
 
          [ set s-need 0] ]
@@ -296,17 +294,6 @@ to do-plotting
   ]
 
 
-
-
-  ;set-current-plot "Level of Awareness"
-  ;set-current-plot-pen "Activist"
-  ;  plot count turtles with [ activist? ]
-  ;set-current-plot-pen "Well Informed"
-  ;  plot count turtles with [ well-informed? ]
-  ;set-current-plot-pen "Aware"
-  ;  plot count turtles with [ aware? ]
-  ;set-current-plot-pen "Unaware"
-  ;  plot count turtles with [ unaware? ]
 
 end
 
