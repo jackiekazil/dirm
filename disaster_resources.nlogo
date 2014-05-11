@@ -83,7 +83,7 @@ to setup-helpers
   while [helper-count < num-helpers] [
     ask center-patches [
         sprout-helpers 1 [
-        set color 27
+        set color 26
         set capacity capacity-setting  ; how much a helper can carry
                        
         set h-type random 2                  ; if h-type is 0, then survival supplies. if 1, then recovery.
@@ -238,7 +238,9 @@ to helper-move
         [ if (mobility = True) [
             ifelse any? (viable-survivors)
               [ find-survivors self ]
-              [ set color 41 ] ; do nothing & chance to an inactive state
+              [ 
+                set color 21 
+                ] ; do nothing & chance to an inactive state
             ]
         ]
     ]
@@ -336,7 +338,9 @@ to do-plotting
   histogram s-traveled
   let maxbar modes [distance-traveled] of survivors
   let maxrange filter [ ? = item 0 maxbar ] [distance-traveled] of survivors
-  set-plot-y-range 0 ((length maxrange) * 3)
+  set maxrange length maxrange
+  if maxrange < 1 [ set maxrange 1 ]  ; to prevent error from happening at very low number of survivor rates.
+  set-plot-y-range 0 ((maxrange) * 3)
   set-plot-pen-mode 1
   set-histogram-num-bars 20
   
@@ -426,7 +430,7 @@ num-survivors
 num-survivors
 1
 5000
-2340
+802
 1
 1
 NIL
@@ -485,7 +489,7 @@ num-helpers
 num-helpers
 1
 500
-446
+6
 5
 1
 NIL
@@ -500,7 +504,7 @@ centers
 centers
 1
 20
-2
+7
 1
 1
 NIL
@@ -545,7 +549,7 @@ survivor-carrying-capacity
 survivor-carrying-capacity
 1
 100
-6
+16
 5
 1
 NIL
@@ -713,7 +717,7 @@ SLIDER
 %-helpers-mobile
 0
 100
-15
+100
 5
 1
 NIL
@@ -742,10 +746,10 @@ hide-helpers?
 -1000
 
 PLOT
-962
-65
-1373
-215
+904
+522
+1315
+672
 Survivor Distance Traveled
 distance traveled
 occurrences
