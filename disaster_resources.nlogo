@@ -5,7 +5,9 @@ globals [
   tail-fade-rate
 ]
 
-turtles-own [ home-patch current-need capacity]
+turtles-own [ home-patch current-need capacity 
+  distance-traveled #-of-interactions
+  ]
 
 breed [survivors survivor]
 breed [helpers helper]
@@ -19,7 +21,7 @@ survivors-own [
 
 ; h-type is the type of helper
 ; 1 is life sustaining, 2 is rebuilding & recovery
-helpers-own [ h-type ]
+helpers-own [ h-type mobility ]
 
 tails-own [ tail-type ]  ; tail-type is either helper or survivor
 
@@ -81,20 +83,22 @@ to setup-helpers
   while [helper-count < num-helpers] [
     ask center-patches [
         sprout-helpers 1 [
-        set color yellow
+        set color 45
         set capacity capacity-setting  ; how much a helper can carry
                        
         set h-type random 2                  ; if h-type is 0, then survival supplies. if 1, then recovery.
-        set home-patch patch-here
-        
-        if helpers-mobile? [ setxy random-xcor random-ycor ]
+        set home-patch patch-here       
       ]
       set helper-count (helper-count + 1)
     ]
   ]
   
-  ask center-patches [
-   
+  ask helpers
+  [
+    ifelse random-float 100 < %-helpers-mobile [ 
+      set mobility True
+      setxy random-xcor random-ycor] 
+      [set mobility False]
   ]
 end
 
@@ -174,7 +178,7 @@ end
 
 to survivor-move
   ; color oneself
-  color-myself
+  display-myself
   
   ;; DECIDE NEXT MOVE
   ;current-need 0 = needs survival supplies
@@ -204,15 +208,21 @@ to survivor-move
 
 end
 
-to color-myself
+to display-myself
+  
+  ifelse hide-survivors? [ ht ][ st ]
+  
   ifelse survival-pts > 75 [ set color 64 ]
     [ ifelse (75 <= survival-pts) and  (survival-pts > 50) [ set color 66 ]
       [ ifelse (50 <= survival-pts) and  (survival-pts > 25) [ set color 68 ]
         [ set color gray ] ] ]
+  
+ 
 end
 
 
 to helper-move
+  ifelse hide-helpers? [ ht ][ st ]
   
   ;set label round(capacity)
   let need ([h-type] of self)
@@ -221,14 +231,14 @@ to helper-move
   let viable-survivors survivors with [(current-need = need) and (recovered? = False)]
   
   ifelse capacity = 0 [
-    ifelse patch-here = home-patch [ set capacity capacity-setting ][ go-to-refill ] 
+    ifelse patch-here = home-patch [ set capacity capacity-setting ][ go-home ] 
     ][
     ifelse any? viable-survivors-here
         [ exchange-supplies viable-survivors-here h-type]
-        [ if (helpers-mobile? = True) [
+        [ if (mobility = True) [
             ifelse any? (viable-survivors)
               [ find-survivors self ]
-              [ fd movement-fwd ]
+              [ set color 41 ] ; do nothing & chance to an inactive state
             ]
         ]
     ]
@@ -305,7 +315,7 @@ to find-survivors [h-in-action]
   fd movement-fwd
 end
 
-to go-to-refill
+to go-home
   set heading towards home-patch
   fd movement-fwd
 end
@@ -408,7 +418,7 @@ num-survivors
 num-survivors
 1
 10000
-1539
+1027
 1
 1
 NIL
@@ -467,7 +477,7 @@ num-helpers
 num-helpers
 1
 1000
-15
+146
 5
 1
 NIL
@@ -482,7 +492,7 @@ centers
 centers
 1
 20
-1
+9
 1
 1
 NIL
@@ -527,7 +537,7 @@ survivor-carrying-capacity
 survivor-carrying-capacity
 1
 100
-10
+26
 5
 1
 NIL
@@ -542,7 +552,7 @@ helper-supply-capacity
 helper-supply-capacity
 1
 5000
-50
+2751
 25
 1
 NIL
@@ -602,17 +612,6 @@ total-system-supplies
 1
 NIL
 HORIZONTAL
-
-SWITCH
-908
-385
-1065
-418
-helpers-mobile?
-helpers-mobile?
-0
-1
--1000
 
 MONITOR
 161
@@ -674,6 +673,7 @@ PENS
 "% agents alive" 1.0 0 -13840069 true "" ""
 "avg survival pts" 1.0 0 -13791810 true "" ""
 "avg recovery pts" 1.0 0 -4699768 true "" ""
+"pen-5" 1.0 0 -7500403 true "" ""
 
 SWITCH
 14
@@ -693,7 +693,7 @@ SWITCH
 513
 survivor-tails?
 survivor-tails?
-0
+1
 1
 -1000
 
@@ -706,11 +706,33 @@ SLIDER
 %-helpers-mobile
 0
 100
-50
+100
 5
 1
 NIL
 HORIZONTAL
+
+SWITCH
+24
+549
+179
+582
+hide-survivors?
+hide-survivors?
+1
+1
+-1000
+
+SWITCH
+31
+593
+173
+626
+hide-helpers?
+hide-helpers?
+0
+1
+-1000
 
 @#$#@#$#@
 @#$#@#$#@

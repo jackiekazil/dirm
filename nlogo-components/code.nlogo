@@ -5,7 +5,9 @@ globals [
   tail-fade-rate
 ]
 
-turtles-own [ home-patch current-need capacity]
+turtles-own [ home-patch current-need capacity
+  distance-traveled #-of-interactions
+  ]
 
 breed [survivors survivor]
 breed [helpers helper]
@@ -19,7 +21,7 @@ survivors-own [
 
 ; h-type is the type of helper
 ; 1 is life sustaining, 2 is rebuilding & recovery
-helpers-own [ h-type ]
+helpers-own [ h-type mobility ]
 
 tails-own [ tail-type ]  ; tail-type is either helper or survivor
 
@@ -54,7 +56,8 @@ to setup-survivors
 
     ; cost on survivor points per tick
     ; survivor days is the number of days that an individual can survive without water
-    set survivor-days random-normal 3 2 ;Survives 4 days, but this can vary greatly
+    set survivor-days random-normal 3 1 ;Survives 3 days, but this can vary greatly
+    if survivor-days < 0 [ set survivor-days .01 ]  ; This is to make sure that someone doesn't have a negative value.
     set cost-per-day (100 / survivor-days)
     set cost-per-tick (cost-per-day / 16)
   ]
@@ -80,20 +83,22 @@ to setup-helpers
   while [helper-count < num-helpers] [
     ask center-patches [
         sprout-helpers 1 [
-        set color yellow
+        set color 45
         set capacity capacity-setting  ; how much a helper can carry
 
         set h-type random 2                  ; if h-type is 0, then survival supplies. if 1, then recovery.
         set home-patch patch-here
-
-        setxy random-xcor random-ycor
       ]
       set helper-count (helper-count + 1)
     ]
   ]
 
-  ask center-patches [
-
+  ask helpers
+  [
+    ifelse random-float 100 < %-helpers-mobile [
+      set mobility True
+      setxy random-xcor random-ycor]
+      [set mobility False]
   ]
 end
 
@@ -103,17 +108,14 @@ to disaster-strikes
 
   if damage-distribution = "normal" [
    ask survivors [ set recovery-pts random-normal mdv sd ]
-   ; TODO color turtles here.
   ]
 
   if damage-distribution = "exponential" [
     ask survivors [ set recovery-pts random-exponential mdv ]
-    ; TODO color turtles here.
   ]
 
   if damage-distribution = "power law" [
     ask survivors [ set recovery-pts random-poisson mdv ]
-    ; TODO color turtles here.
   ]
 end
 
@@ -162,14 +164,21 @@ to go-once
 end
 
 to go
-  if not any? survivors [stop]
   go-once
+
+  if not any? survivors [stop]
+  if mean [ recovery-pts ] of survivors > 95 [
+    ; Do some extra plotting, so we can visually recognize that it has flatlined.
+    ; Adding extra ticks knowingly b/c of the extra plotting.
+    do-plotting tick do-plotting tick do-plotting tick do-plotting tick do-plotting tick
+    stop
+    ]
 end
 
 
 to survivor-move
   ; color oneself
-  color-myself
+  display-myself
 
   ;; DECIDE NEXT MOVE
   ;current-need 0 = needs survival supplies
@@ -178,9 +187,9 @@ to survivor-move
   ifelse (patch-here = home-patch) and (capacity >= survivor-carrying-capacity) [set capacity 0][
     ; if what the survivor is carrying is more than their capactiy, then they need to return home for a drop off
     ifelse capacity >= survivor-carrying-capacity [ set current-need 2 ][
-      ifelse survival-pts < (2 * cost-per-day)
-      [set current-need 0]   ; if our survival pts are less than 2 days of supplies, we need survival supplies
-      [set current-need 1]   ; if greater than or equal to, then we need recovery supplies
+      ifelse survival-pts < (survivor-days / 2) ; survival supplies become a priority when they have less than half their survival supplies
+        [set current-need 0]   ; if our survival pts are less than 2 days of supplies, we need survival supplies
+        [set current-need 1]   ; if greater than or equal to, then we need recovery supplies
     ]
 
     ;; EXECUTE MOVE
@@ -199,17 +208,21 @@ to survivor-move
 
 end
 
-to color-myself
+to display-myself
+
+  ifelse hide-survivors? [ ht ][ st ]
+
   ifelse survival-pts > 75 [ set color 64 ]
     [ ifelse (75 <= survival-pts) and  (survival-pts > 50) [ set color 66 ]
       [ ifelse (50 <= survival-pts) and  (survival-pts > 25) [ set color 68 ]
         [ set color gray ] ] ]
+
+
 end
 
 
 to helper-move
-  ; set up tails if tail on
-
+  ifelse hide-helpers? [ ht ][ st ]
 
   ;set label round(capacity)
   let need ([h-type] of self)
@@ -218,13 +231,15 @@ to helper-move
   let viable-survivors survivors with [(current-need = need) and (recovered? = False)]
 
   ifelse capacity = 0 [
-    ifelse patch-here = home-patch [ set capacity capacity-setting ][ go-to-refill ]
+    ifelse patch-here = home-patch [ set capacity capacity-setting ][ go-home ]
     ][
     ifelse any? viable-survivors-here
-        [exchange-supplies viable-survivors-here h-type]
-        [ifelse any? viable-survivors
-          [find-survivors self]
-          [fd movement-fwd]
+        [ exchange-supplies viable-survivors-here h-type]
+        [ if (mobility = True) [
+            ifelse any? (viable-survivors)
+              [ find-survivors self ]
+              [ set color 41 ] ; do nothing & chance to an inactive state
+            ]
         ]
     ]
 
@@ -300,7 +315,7 @@ to find-survivors [h-in-action]
   fd movement-fwd
 end
 
-to go-to-refill
+to go-home
   set heading towards home-patch
   fd movement-fwd
 end
@@ -315,8 +330,6 @@ to do-plotting
     set-current-plot-pen "avg recovery pts"
     plot mean [ recovery-pts ] of survivors
   ]
-
-
 
 end
 
