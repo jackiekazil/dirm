@@ -2,12 +2,14 @@ globals [
   center-patches
   movement-fwd
   capacity-setting
+  tail-fade-rate
 ]
 
 turtles-own [ home-patch current-need capacity]
 
 breed [survivors survivor]
 breed [helpers helper]
+breed [tails tail]
 
 survivors-own [ 
   survival-pts recovery-pts 
@@ -18,6 +20,8 @@ survivors-own [
 ; h-type is the type of helper
 ; 1 is life sustaining, 2 is rebuilding & recovery
 helpers-own [ h-type ]
+
+tails-own [ tail-type ]  ; tail-type is either helper or survivor
 
 to setup
   clear-all
@@ -30,6 +34,9 @@ to setup
   ; after the disaster hit
   setup-patches
   setup-helpers
+  
+  set-default-shape tails "line"
+  set tail-fade-rate 0.3
 end
 
 
@@ -111,11 +118,30 @@ to disaster-strikes
 end
 
 to go-once
-
-
   
-  ask survivors with [recovered? = False] [ survivor-move ]
-  ask helpers [ helper-move]
+  ; Tails are added to watch the general movement of turtle types.
+  if ((helper-tails? = True) or (survivor-tails? = True)) [
+    ask tails [
+      set color color - tail-fade-rate ;; make tail color darker
+      if color mod 10 < 1  [ die ]     ;; die if we are almost at black
+      ]
+    ]
+  
+  if helper-tails? = False [ ask tails with [tail-type = "helper"] [ die ] ]
+  if survivor-tails? = False [ ask tails with [tail-type = "survivor"] [ die ] ]
+  
+  ask survivors with [ recovered? = False ] [ 
+    survivor-move 
+    if survivor-tails? = True [
+      hatch-tails 1 [ set tail-type "survivor" ]
+      ]
+    ]
+  ask helpers [ 
+    helper-move
+    if helper-tails? = True [
+      hatch-tails 1 [ set tail-type "helper" ]
+      ]
+  ]
   
   ask survivors [ 
    if survival-pts >= 100 [
@@ -156,16 +182,11 @@ to survivor-move
       [set current-need 0]   ; if our survival pts are less than 2 days of supplies, we need survival supplies
       [set current-need 1]   ; if greater than or equal to, then we need recovery supplies
     ]
-    ; TODO: ? Add memory and less to 1 day if they know where supplies are?
-    ;TODO add cone of vision?
-    ;ask standers in-cone vision-radius vision-angle
-    ;ask helpers in-cone agent-vision-distance 180 [print self]
     
     ;; EXECUTE MOVE
     ifelse current-need = 2 [ set heading towards home-patch ] [
       let viable-helpers (helpers with [h-type = current-need])
       let nearest-neighbor min-one-of viable-helpers [ distance myself ]
-      ;set destination [list xcor ycor] of nearest-neighbor
       set heading towards nearest-neighbor
     ]
     fd movement-fwd
@@ -187,23 +208,26 @@ end
 
 
 to helper-move
-    ;set label round(capacity)
-    let need ([h-type] of self)
+  ; set up tails if tail on
+  
+  
+  ;set label round(capacity)
+  let need ([h-type] of self)
 
-    let viable-survivors-here survivors-here with [(current-need = need) and (capacity <= 100) and (recovered? = False)]
-    let viable-survivors survivors with [(current-need = need) and (recovered? = False)]
-    
-    ifelse capacity = 0 [
-      ifelse patch-here = home-patch [ set capacity capacity-setting ][ go-to-refill ] 
-      ][
-      ifelse any? viable-survivors-here
-          [exchange-supplies viable-survivors-here h-type]
-          [ifelse any? viable-survivors
-            [find-survivors self]
-            [fd movement-fwd]
-          ]
-      ]
-    
+  let viable-survivors-here survivors-here with [(current-need = need) and (capacity <= 100) and (recovered? = False)]
+  let viable-survivors survivors with [(current-need = need) and (recovered? = False)]
+  
+  ifelse capacity = 0 [
+    ifelse patch-here = home-patch [ set capacity capacity-setting ][ go-to-refill ] 
+    ][
+    ifelse any? viable-survivors-here
+        [exchange-supplies viable-survivors-here h-type]
+        [ifelse any? viable-survivors
+          [find-survivors self]
+          [fd movement-fwd]
+        ]
+    ]
+  
     
 end
 
@@ -382,7 +406,7 @@ num-survivors
 num-survivors
 0
 10000
-128
+64
 1
 1
 NIL
@@ -516,7 +540,7 @@ survivor-carrying-capacity
 survivor-carrying-capacity
 0
 100
-100
+10
 5
 1
 NIL
@@ -556,7 +580,7 @@ mean-damage-value
 mean-damage-value
 0
 100
-45
+75
 5
 1
 NIL
@@ -663,6 +687,28 @@ PENS
 "% agents alive" 1.0 0 -13840069 true "" ""
 "avg survival pts" 1.0 0 -13791810 true "" ""
 "avg recovery pts" 1.0 0 -4699768 true "" ""
+
+SWITCH
+14
+427
+204
+460
+helper-tails?
+helper-tails?
+1
+1
+-1000
+
+SWITCH
+21
+480
+168
+513
+survivor-tails?
+survivor-tails?
+0
+1
+-1000
 
 @#$#@#$#@
 @#$#@#$#@
