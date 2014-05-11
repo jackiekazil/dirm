@@ -199,6 +199,7 @@ to survivor-move
       set heading towards nearest-neighbor
     ]
     fd movement-fwd
+    set distance-traveled (distance-traveled + 1)
   ]
 
   ;; DEDUCT SURVIVAL POINTS
@@ -330,6 +331,19 @@ to do-plotting
     set-current-plot-pen "avg recovery pts"
     plot mean [ recovery-pts ] of survivors
   ]
+  
+  ; Plot distance distribution
+  set-current-plot "Survivor Distance Traveled"
+  set-current-plot-pen "distance-traveled"
+  histogram [distance-traveled] of survivors
+  let maxbar modes [distance-traveled] of survivors
+  let maxrange filter [ ? = item 0 maxbar ] [distance-traveled] of survivors
+  set-plot-y-range 0 length maxrange
+  
+  ;set-current-plot-pen "blues" histogram-from turtles with [ true ] [
+  ;  int assets]
+  ;set-current-plot-pen "reds" histogram-from turtles with [ color =
+  ;  red ] [ int assets ]
   
 end
 
@@ -477,7 +491,7 @@ num-helpers
 num-helpers
 1
 1000
-146
+66
 5
 1
 NIL
@@ -537,7 +551,7 @@ survivor-carrying-capacity
 survivor-carrying-capacity
 1
 100
-26
+11
 5
 1
 NIL
@@ -552,7 +566,7 @@ helper-supply-capacity
 helper-supply-capacity
 1
 5000
-2751
+2651
 25
 1
 NIL
@@ -673,7 +687,6 @@ PENS
 "% agents alive" 1.0 0 -13840069 true "" ""
 "avg survival pts" 1.0 0 -13791810 true "" ""
 "avg recovery pts" 1.0 0 -4699768 true "" ""
-"pen-5" 1.0 0 -7500403 true "" ""
 
 SWITCH
 14
@@ -733,6 +746,24 @@ hide-helpers?
 0
 1
 -1000
+
+PLOT
+1007
+268
+1418
+418
+Survivor Distance Traveled
+distance traveled
+occurrences
+0.0
+100.0
+0.0
+100.0
+true
+true
+"" ""
+PENS
+"distance-traveled" 1.0 0 -10899396 true "" ""
 
 @#$#@#$#@
 @#$#@#$#@
