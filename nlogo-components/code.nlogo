@@ -294,7 +294,6 @@ end
 to find-survivors [h-in-action]
   ;find vialabe-survivors, find the closest one, set heading to the closest, then move
   let need ([h-type] of h-in-action)
-  ;ask survivors [ print [current-need] of self ]
   let viable-survivors survivors with [current-need = need]
   let nearest-neighbor min-one-of viable-survivors [ distance myself ]
   set heading towards nearest-neighbor
