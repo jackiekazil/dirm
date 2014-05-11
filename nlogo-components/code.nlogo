@@ -1,20 +1,23 @@
 globals [
   center-patches
-  cost-per-tick
-  cost-per-day
   movement-fwd
   capacity-setting
 ]
 
-turtles-own [ home-patch current-need capacity ]
+turtles-own [ home-patch current-need capacity]
 
 breed [survivors survivor]
 breed [helpers helper]
 
-survivors-own [ survival-pts recovery-pts]
-helpers-own [ h-type ]
+survivors-own [
+  survival-pts recovery-pts
+  recovered?
+  cost-per-tick survivor-days cost-per-day
+  ]
+
 ; h-type is the type of helper
-  ; 1 is life sustaining, 2 is rebuilding & recovery
+; 1 is life sustaining, 2 is rebuilding & recovery
+helpers-own [ h-type ]
 
 to setup
   clear-all
@@ -40,13 +43,14 @@ to setup-survivors
     set home-patch patch-here
     set survival-pts 100
     set recovery-pts 100
-  ]
+    set recovered? False
 
-  ; cost on survivor points per tick
-  ; survivor days is the number of days that an individual can survive without water
-  let survivor-days random-normal 3 2  ;Survives 4 days, but this can vary greatly
-  set cost-per-day (100 / survivor-days)
-  set cost-per-tick (cost-per-day / 16)
+    ; cost on survivor points per tick
+    ; survivor days is the number of days that an individual can survive without water
+    set survivor-days random-normal 3 2 ;Survives 4 days, but this can vary greatly
+    set cost-per-day (100 / survivor-days)
+    set cost-per-tick (cost-per-day / 16)
+  ]
 
 end
 
@@ -61,12 +65,14 @@ to setup-helpers
   ; Only sprout helpers if we haven't reached out helper count
   let helper-count 0
   let possible-cap-of-helper (total-system-supplies / num-helpers)
+
   ifelse possible-cap-of-helper > helper-supply-capacity
     [ set capacity-setting helper-supply-capacity ]
     [ set capacity-setting possible-cap-of-helper ]
-  ask center-patches [
-    while [helper-count < num-helpers] [
-      sprout-helpers 1 [
+
+  while [helper-count < num-helpers] [
+    ask center-patches [
+        sprout-helpers 1 [
         set color yellow
         set capacity capacity-setting  ; how much a helper can carry
 
@@ -77,6 +83,10 @@ to setup-helpers
       ]
       set helper-count (helper-count + 1)
     ]
+  ]
+
+  ask center-patches [
+
   ]
 end
 
@@ -101,14 +111,29 @@ to disaster-strikes
 end
 
 to go-once
-  ask survivors [ survivor-move ]
+
+  ask survivors [
+   if survival-pts >= 100 [
+     set survival-pts 100
+   ]
+   if recovery-pts >= 100 [
+     set recovery-pts 100
+     set recovered? True
+     if (patch-here != home-patch) [
+       set heading towards home-patch
+       fd movement-fwd
+     ]
+   ]
+  ]
+
+  ask survivors with [recovered? = False] [ survivor-move ]
   ask helpers [ helper-move]
 end
 
 to go
   if not any? survivors [stop]
-  do-plotting
   go-once
+  do-plotting
   tick
 end
 
@@ -157,12 +182,13 @@ to color-myself
         [ set color gray ] ] ]
 end
 
+
 to helper-move
-    set label round(capacity)
+    ;set label round(capacity)
     let need ([h-type] of self)
 
-    let viable-survivors-here survivors-here with [current-need = need]
-    let viable-survivors survivors with [current-need = need]
+    let viable-survivors-here survivors-here with [(current-need = need) and (capacity <= 100) and (recovered? = False)]
+    let viable-survivors survivors with [(current-need = need) and (recovered? = False)]
 
     ifelse capacity = 0 [
       ifelse patch-here = home-patch [ set capacity capacity-setting ][ go-to-refill ]
@@ -200,14 +226,23 @@ to exchange-supplies [viablesurvivors local-h-type]
      [ let spw ([survival-pts] of winner)
        ifelse spw <= 100
          [ set s-need (survivor-carrying-capacity - s-cap)
-           if s-need > ( 100 - spw) [ set s-need ( 100 - spw )]]
+           print "########################"
+           print s-need
+           print survivor-carrying-capacity
+           print s-cap
+           if s-need >= ( 100 - spw) [ set s-need ( 100 - spw )]
+           print s-need
+           ]
+
          [ set s-need 0] ]
+
 
      ; Recovery
      [ let rpw ([recovery-pts] of winner)
+
        ifelse rpw <= 100
          [ set s-need (survivor-carrying-capacity - s-cap)
-           if s-need > ( 100 - rpw) [ set s-need ( 100 - rpw )]]
+           if s-need >= ( 100 - rpw) [ set s-need ( 100 - rpw )]]
          [ set s-need 0] ]
 
    ; if the helper capacity is greater than the survivor need
@@ -224,11 +259,12 @@ to exchange-supplies [viablesurvivors local-h-type]
       set h-cap 0
       ]
 
-   ask self [set capacity h-cap]
+   ask self [
+     set capacity h-cap
+     ]
    ask winner [
      set capacity s-cap
      ifelse local-h-type = 0 [set survival-pts (survival-pts + s-cap)] [set recovery-pts (recovery-pts + s-cap)]
-
      ]
 
 end
@@ -254,9 +290,11 @@ to do-plotting
     set-current-plot-pen "% agents alive"
     plot (count survivors / num-survivors * 100)
     set-current-plot-pen "avg survival pts"
-    plot mean [ survival-pts ] of survivors]
+    plot mean [ survival-pts ] of survivors
     set-current-plot-pen "avg recovery pts"
     plot mean [ recovery-pts ] of survivors
+  ]
+
 
 
 
