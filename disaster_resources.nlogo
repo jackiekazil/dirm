@@ -27,6 +27,10 @@ helpers-own [ h-type mobility ]
 ; http://stackoverflow.com/questions/21074186/netlogo-turtles-leaving-a-trail-that-fades-with-time/21081613#21081613
 tails-own [ tail-type ]  ; tail-type is either helper or survivor
 
+;;;;;;;;;;;;;
+;;; Setup ;;;
+;;;;;;;;;;;;;
+
 to setup
   clear-all
   reset-ticks
@@ -122,6 +126,11 @@ to disaster-strikes
   ]
 end
 
+
+;;;;;;;;;;;;::;;;;;;
+;;; Go & Go-once ;;;
+;;;;;;;;;;;;;;;;;;;;
+
 to go-once
   ; Hide and show survivors and helpers.
   ifelse hide-survivors?  [ ask survivors [ ht ]] [ ask survivors [ st ]]
@@ -166,6 +175,9 @@ to go-once
   ]
 
   do-plotting
+  
+  if write-outfile? [ write-to-file ]
+  
   tick
 end
 
@@ -181,6 +193,9 @@ to go
     ]  
 end
 
+;;;;;;;;;;;;::;;;;;;;;
+;;; Survivor moves ;;;
+;;;;;;;;;;;;;;;;;;;;;;
 
 to survivor-move
   ; color oneself
@@ -225,8 +240,11 @@ to display-myself
 end
 
 
+;;;;;;;;;;;;;;;;;;;;
+;;; Helper moves ;;;
+;;;;;;;;;;;;;;;;;;;;
+
 to helper-move
-  
   ;set label round(capacity)
   let need ([h-type] of self)
 
@@ -323,6 +341,11 @@ to go-home
   fd movement-fwd
 end
 
+
+;;;;;;;;;;;;;;;;
+;;; Plotting ;;;
+;;;;;;;;;;;;;;;;
+
 to do-plotting
   set-current-plot "Avg. system values"
   if any? survivors [
@@ -350,6 +373,62 @@ to do-plotting
 end
 
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Write info to file ;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+to write-to-file
+  let s-count count survivors
+  let s-helpers count helpers with [h-type = 0]
+  let r-helpers count helpers with [h-type = 1]
+  let s-pts mean [survival-pts] of survivors
+  let r-pts mean [recovery-pts] of survivors
+  let s-age mean [age] of survivors
+    
+  file-open "output.csv"
+  file-write run-label
+  file-type ","
+  file-write damage-distribution
+  file-type "," 
+  file-write mean-damage-value
+  file-type "," 
+  file-write SD-if-normal-dist
+  file-type ","
+  file-write num-survivors
+  file-type "," 
+  file-write survivor-carrying-capacity
+  file-type "," 
+
+  file-write s-count
+  file-type "," 
+  file-write s-age
+  file-type "," 
+  file-write s-pts
+  file-type "," 
+  file-write r-pts
+  file-type ","
+  file-write mean ([distance-traveled] of survivors)
+  file-type ","
+  
+  file-write centers
+  file-type "," 
+  file-write num-helpers
+  file-type "," 
+ 
+  file-write s-helpers
+  file-type ","
+  file-write r-helpers
+  file-type "," 
+  file-write %-helpers-mobile
+  file-type "," 
+  file-write helper-supply-capacity
+  
+  file-type "," 
+  file-write total-system-supplies
+
+  file-type "\n"
+  file-close
+end
 
 @#$#@#$#@
 GRAPHICS-WINDOW
@@ -496,7 +575,7 @@ centers
 centers
 1
 20
-10
+9
 1
 1
 NIL
@@ -570,7 +649,7 @@ CHOOSER
 damage-distribution
 damage-distribution
 "normal" "exponential" "power law"
-0
+1
 
 SLIDER
 105
@@ -581,7 +660,7 @@ mean-damage-value
 mean-damage-value
 0
 100
-65
+50
 5
 1
 NIL
@@ -711,7 +790,7 @@ SWITCH
 576
 hide-survivors?
 hide-survivors?
-0
+1
 1
 -1000
 
@@ -722,7 +801,7 @@ SWITCH
 539
 hide-helpers?
 hide-helpers?
-0
+1
 1
 -1000
 
@@ -786,15 +865,26 @@ Visualization enhancements
 1
 
 SWITCH
-1123
-390
-1256
-423
-write-outfile
-write-outfile
+1168
+367
+1307
+400
+write-outfile?
+write-outfile?
 1
 1
 -1000
+
+INPUTBOX
+1168
+403
+1308
+463
+run-label
+Testing damage distribution
+1
+0
+String
 
 @#$#@#$#@
 ## WHAT IS IT?
