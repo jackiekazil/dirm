@@ -5,9 +5,7 @@ globals [
   tail-fade-rate
 ]
 
-turtles-own [ home-patch current-need capacity 
-  distance-traveled #-of-interactions
-  ]
+turtles-own [ home-patch current-need capacity ]
 
 breed [survivors survivor]
 breed [helpers helper]
@@ -17,6 +15,8 @@ survivors-own [
   survival-pts recovery-pts 
   recovered? 
   cost-per-tick survivor-days cost-per-day
+  distance-traveled
+  age
   ]
 
 ; h-type is the type of helper
@@ -179,6 +179,7 @@ end
 to survivor-move
   ; color oneself
   display-myself
+  set age ticks
   
   ;; DECIDE NEXT MOVE
   ;current-need 0 = needs survival supplies
@@ -343,7 +344,7 @@ to do-plotting
   set-plot-y-range 0 ((maxrange) * 3)
   set-plot-pen-mode 1
   set-histogram-num-bars 20
-  
+
 end
 
 
@@ -430,7 +431,7 @@ num-survivors
 num-survivors
 1
 5000
-802
+803
 1
 1
 NIL
@@ -489,7 +490,7 @@ num-helpers
 num-helpers
 1
 500
-6
+116
 5
 1
 NIL
@@ -549,7 +550,7 @@ survivor-carrying-capacity
 survivor-carrying-capacity
 1
 100
-16
+51
 5
 1
 NIL
@@ -717,7 +718,7 @@ SLIDER
 %-helpers-mobile
 0
 100
-100
+50
 5
 1
 NIL
@@ -758,12 +759,69 @@ occurrences
 0.0
 100.0
 true
-true
+false
 "" ""
 PENS
 "distance-traveled" 1.0 0 -10899396 true "" ""
 
+MONITOR
+11
+381
+77
+426
+Avg. age
+mean [age] of survivors
+1
+1
+11
+
 @#$#@#$#@
+## WHAT IS IT?
+
+Put something here.
+
+## HOW IT WORKS
+
+Put something here.
+
+## HOW TO USE IT
+
+Press SETUP and then GO.
+
+Put something here.
+
+
+## THINGS TO NOTICE
+
+Put something here.
+
+
+## THINGS TO TRY
+
+Put something here.
+
+## EXTENDING THE MODEL
+
+Put something here.
+
+
+## CREDITS AND REFERENCES
+
+Create Urban Suite & Awareness model in urban suite.
+
+Put something here.
+
+## HOW TO CITE
+
+Put something here.
+
+If you mention this model in a publication, we ask that you include these citations for the model itself and for the NetLogo software:
+
+* Felsen, M. and Wilensky, U. (2007).  NetLogo Urban Suite - Awareness model.  http://ccl.northwestern.edu/netlogo/models/UrbanSuite-Awareness.  Center for Connected Learning and Computer-Based Modeling, Northwestern University, Evanston, IL.
+* Wilensky, U. (1999). NetLogo. http://ccl.northwestern.edu/netlogo/. Center for Connected Learning and Computer-Based Modeling, Northwestern University, Evanston, IL.
+
+## COPYRIGHT AND LICENSE
+Put something here.
 @#$#@#$#@
 default
 true

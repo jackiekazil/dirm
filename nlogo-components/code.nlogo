@@ -5,9 +5,7 @@ globals [
   tail-fade-rate
 ]
 
-turtles-own [ home-patch current-need capacity
-  distance-traveled #-of-interactions
-  ]
+turtles-own [ home-patch current-need capacity ]
 
 breed [survivors survivor]
 breed [helpers helper]
@@ -17,6 +15,8 @@ survivors-own [
   survival-pts recovery-pts
   recovered?
   cost-per-tick survivor-days cost-per-day
+  distance-traveled
+  age
   ]
 
 ; h-type is the type of helper
@@ -83,7 +83,7 @@ to setup-helpers
   while [helper-count < num-helpers] [
     ask center-patches [
         sprout-helpers 1 [
-        set color 27
+        set color 26
         set capacity capacity-setting  ; how much a helper can carry
 
         set h-type random 2                  ; if h-type is 0, then survival supplies. if 1, then recovery.
@@ -179,6 +179,7 @@ end
 to survivor-move
   ; color oneself
   display-myself
+  set age ticks
 
   ;; DECIDE NEXT MOVE
   ;current-need 0 = needs survival supplies
@@ -238,7 +239,9 @@ to helper-move
         [ if (mobility = True) [
             ifelse any? (viable-survivors)
               [ find-survivors self ]
-              [ set color 41 ] ; do nothing & chance to an inactive state
+              [
+                set color 21
+                ] ; do nothing & chance to an inactive state
             ]
         ]
     ]
@@ -336,8 +339,13 @@ to do-plotting
   histogram s-traveled
   let maxbar modes [distance-traveled] of survivors
   let maxrange filter [ ? = item 0 maxbar ] [distance-traveled] of survivors
-  set-plot-y-range 0 ((length maxrange) * 3)
+  set maxrange length maxrange
+  if maxrange < 1 [ set maxrange 1 ]  ; to prevent error from happening at very low number of survivor rates.
+  set-plot-y-range 0 ((maxrange) * 3)
   set-plot-pen-mode 1
   set-histogram-num-bars 20
 
 end
+
+
+
