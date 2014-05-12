@@ -23,6 +23,8 @@ survivors-own [
 ; 1 is life sustaining, 2 is rebuilding & recovery
 helpers-own [ h-type mobility ]
 
+; all code associated with tails is based off this:
+; http://stackoverflow.com/questions/21074186/netlogo-turtles-leaving-a-trail-that-fades-with-time/21081613#21081613
 tails-own [ tail-type ]  ; tail-type is either helper or survivor
 
 to setup
@@ -354,7 +356,7 @@ GRAPHICS-WINDOW
 310
 10
 894
-615
+671
 -1
 -1
 11.255
@@ -370,7 +372,7 @@ GRAPHICS-WINDOW
 0
 50
 0
-50
+55
 0
 0
 1
@@ -378,10 +380,10 @@ ticks
 30.0
 
 BUTTON
-185
-107
-250
-140
+233
+69
+298
+102
 setup
 setup
 NIL
@@ -395,10 +397,10 @@ NIL
 1
 
 BUTTON
-183
-141
-248
-174
+233
+105
+298
+138
 go
 go
 T
@@ -423,15 +425,15 @@ count survivors
 11
 
 SLIDER
-12
-379
-209
-412
+104
+375
+301
+408
 num-survivors
 num-survivors
 1
 5000
-1829
+5000
 1
 1
 NIL
@@ -471,10 +473,10 @@ count helpers with [h-type = 1]
 11
 
 SLIDER
--3
-498
-169
-531
+104
+521
+302
+554
 num-helpers
 num-helpers
 1
@@ -486,140 +488,140 @@ NIL
 HORIZONTAL
 
 SLIDER
--2
-539
-170
-572
+104
+483
+302
+516
 centers
 centers
 1
 20
-1
+10
 1
 1
 NIL
 HORIZONTAL
 
 TEXTBOX
-10
-63
-160
-175
-TODO -- add description of the model here  add description of the model here add description of the model here add description of the model here add description of the model here.
+74
+68
+224
+180
+After a disaster, resource distribution occurs. This model was created to test various methods of distribution. To watch the model run, click 'setup', then 'go'.\n
 11
 2.0
 1
 
 TEXTBOX
-12
-170
-310
-209
-_____________________________________________________
+76
+175
+374
+214
+_____________________________________________
 10
 8.0
 1
 
 TEXTBOX
-10
-40
-272
-74
-Disaster resource distribution model
+73
+42
+335
+76
+Disaster resource distribution
 14
 93.0
 1
 
 SLIDER
-12
-417
-209
-450
+104
+413
+301
+446
 survivor-carrying-capacity
 survivor-carrying-capacity
 1
 100
-21
+31
 5
 1
 NIL
 HORIZONTAL
 
 SLIDER
-216
-624
-414
-657
+105
+598
+303
+631
 helper-supply-capacity
 helper-supply-capacity
 1
 5000
-2401
+2276
 25
 1
 NIL
 HORIZONTAL
 
 CHOOSER
-145
-218
-297
-263
+105
+226
+302
+271
 damage-distribution
 damage-distribution
 "normal" "exponential" "power law"
-1
+0
 
 SLIDER
-5
-268
-143
-301
+105
+275
+302
+308
 mean-damage-value
 mean-damage-value
 0
 100
-70
+65
 5
 1
 NIL
 HORIZONTAL
 
 SLIDER
-8
-227
-141
-260
+105
+313
+302
+346
 SD-if-normal-dist
 SD-if-normal-dist
 0
 100
-25
+50
 5
 1
 NIL
 HORIZONTAL
 
 SLIDER
-0
-624
-215
-657
+105
+636
+303
+669
 total-system-supplies
 total-system-supplies
 1
 500000
-453901
+224051
 50
 1
 NIL
 HORIZONTAL
 
 BUTTON
-185
-72
-248
-105
+233
+141
+299
+174
 go 1x
 go-once
 NIL
@@ -666,10 +668,10 @@ PENS
 "avg recovery pts" 1.0 0 -4699768 true "" ""
 
 SWITCH
-933
-491
-1060
-524
+905
+506
+1032
+539
 helper-tails?
 helper-tails?
 1
@@ -677,10 +679,10 @@ helper-tails?
 -1000
 
 SWITCH
-932
-528
-1061
-561
+904
+543
+1033
+576
 survivor-tails?
 survivor-tails?
 1
@@ -688,25 +690,25 @@ survivor-tails?
 -1000
 
 SLIDER
-21
-671
-193
-704
+105
+559
+302
+592
 %-helpers-mobile
 %-helpers-mobile
 0
 100
-100
+45
 5
 1
 NIL
 HORIZONTAL
 
 SWITCH
-1065
-528
-1202
-561
+1037
+543
+1174
+576
 hide-survivors?
 hide-survivors?
 0
@@ -714,10 +716,10 @@ hide-survivors?
 -1000
 
 SWITCH
-1064
-491
-1201
-524
+1036
+506
+1173
+539
 hide-helpers?
 hide-helpers?
 0
@@ -754,16 +756,6 @@ mean [age] of survivors
 11
 
 TEXTBOX
-13
-318
-304
-360
-_____________________________________________________
-10
-8.0
-1
-
-TEXTBOX
 902
 459
 1334
@@ -772,6 +764,37 @@ ________________________________________________________________________________
 10
 8.0
 1
+
+TEXTBOX
+76
+198
+170
+246
+System settings
+12
+4.0
+1
+
+TEXTBOX
+906
+484
+1095
+514
+Visualization enhancements
+12
+93.0
+1
+
+SWITCH
+1123
+390
+1256
+423
+write-outfile
+write-outfile
+1
+1
+-1000
 
 @#$#@#$#@
 ## WHAT IS IT?

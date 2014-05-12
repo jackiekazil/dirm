@@ -23,11 +23,14 @@ survivors-own [
 ; 1 is life sustaining, 2 is rebuilding & recovery
 helpers-own [ h-type mobility ]
 
+; all code associated with tails is based off this:
+; http://stackoverflow.com/questions/21074186/netlogo-turtles-leaving-a-trail-that-fades-with-time/21081613#21081613
 tails-own [ tail-type ]  ; tail-type is either helper or survivor
 
 to setup
   clear-all
   reset-ticks
+
   set movement-fwd 1
   setup-survivors
   disaster-strikes
@@ -56,7 +59,7 @@ to setup-survivors
 
     ; cost on survivor points per tick
     ; survivor days is the number of days that an individual can survive without water
-    set survivor-days random-normal 3 1 ;Survives 3 days, but this can vary greatly
+    set survivor-days random-normal 4 1 ;Survives 3 days, but this can vary greatly
     if survivor-days < 0 [ set survivor-days .01 ]  ; This is to make sure that someone doesn't have a negative value.
     set cost-per-day (100 / survivor-days)
     set cost-per-tick (cost-per-day / 16)
@@ -120,6 +123,9 @@ to disaster-strikes
 end
 
 to go-once
+  ; Hide and show survivors and helpers.
+  ifelse hide-survivors?  [ ask survivors [ ht ]] [ ask survivors [ st ]]
+  ifelse hide-helpers? [ ask helpers [ ht ]][ ask helpers [ st ]]
 
   ; Tails are added to watch the general movement of turtle types.
   if ((helper-tails? = True) or (survivor-tails? = True)) [
@@ -165,10 +171,6 @@ end
 
 to go
   go-once
-
-  ; Hide and show survivors and helpers.
-  ifelse hide-survivors?  [ ask survivors [ ht ]] [ ask survivors [ st ]]
-  ifelse hide-helpers? [ ask helpers [ ht ]][ ask helpers [ st ]]
 
   if not any? survivors [stop]
   if mean [ recovery-pts ] of survivors > 95 [
@@ -346,6 +348,3 @@ to do-plotting
   set-histogram-num-bars 20
 
 end
-
-
-
