@@ -28,6 +28,7 @@ tails-own [ tail-type ]  ; tail-type is either helper or survivor
 to setup
   clear-all
   reset-ticks
+  
   set movement-fwd 1
   setup-survivors
   disaster-strikes
@@ -56,7 +57,7 @@ to setup-survivors
     
     ; cost on survivor points per tick
     ; survivor days is the number of days that an individual can survive without water
-    set survivor-days random-normal 3 1 ;Survives 3 days, but this can vary greatly
+    set survivor-days random-normal 4 1 ;Survives 3 days, but this can vary greatly
     if survivor-days < 0 [ set survivor-days .01 ]  ; This is to make sure that someone doesn't have a negative value.
     set cost-per-day (100 / survivor-days)
     set cost-per-tick (cost-per-day / 16)
@@ -120,6 +121,9 @@ to disaster-strikes
 end
 
 to go-once
+  ; Hide and show survivors and helpers.
+  ifelse hide-survivors?  [ ask survivors [ ht ]] [ ask survivors [ st ]]
+  ifelse hide-helpers? [ ask helpers [ ht ]][ ask helpers [ st ]]
   
   ; Tails are added to watch the general movement of turtle types.
   if ((helper-tails? = True) or (survivor-tails? = True)) [
@@ -165,10 +169,6 @@ end
 
 to go
   go-once
-  
-  ; Hide and show survivors and helpers.
-  ifelse hide-survivors?  [ ask survivors [ ht ]] [ ask survivors [ st ]]
-  ifelse hide-helpers? [ ask helpers [ ht ]][ ask helpers [ st ]]
   
   if not any? survivors [stop]
   if mean [ recovery-pts ] of survivors > 95 [
@@ -412,10 +412,10 @@ NIL
 1
 
 MONITOR
-10
-285
-82
-330
+902
+362
+965
+407
 survivors
 count survivors
 0
@@ -423,25 +423,25 @@ count survivors
 11
 
 SLIDER
-906
-261
-1077
-294
+12
+379
+209
+412
 num-survivors
 num-survivors
 1
 5000
-815
+1829
 1
 1
 NIL
 HORIZONTAL
 
 MONITOR
-10
-334
-110
-379
+902
+408
+959
+453
 Avg. life
 mean [survival-pts] of survivors
 0
@@ -449,10 +449,10 @@ mean [survival-pts] of survivors
 11
 
 MONITOR
-75
-285
-165
-330
+966
+362
+1039
+407
 S-helpers
 count helpers with [h-type = 0]
 0
@@ -460,52 +460,41 @@ count helpers with [h-type = 0]
 11
 
 MONITOR
-165
-285
-239
-330
+1040
+362
+1111
+407
 R-helpers
 count helpers with [h-type = 1]
 0
 1
 11
 
-MONITOR
-114
-333
-214
-378
-Centers
-count patches with [ pcolor != black ]
-3
-1
-11
-
 SLIDER
-905
-304
-1077
-337
+-3
+498
+169
+531
 num-helpers
 num-helpers
 1
 500
-116
+236
 5
 1
 NIL
 HORIZONTAL
 
 SLIDER
-906
-345
-1078
-378
+-2
+539
+170
+572
 centers
 centers
 1
 20
-7
+1
 1
 1
 NIL
@@ -542,25 +531,25 @@ Disaster resource distribution model
 1
 
 SLIDER
-911
-213
-1132
-246
+12
+417
+209
+450
 survivor-carrying-capacity
 survivor-carrying-capacity
 1
 100
-51
+21
 5
 1
 NIL
 HORIZONTAL
 
 SLIDER
-1124
-430
-1322
-463
+216
+624
+414
+657
 helper-supply-capacity
 helper-supply-capacity
 1
@@ -572,20 +561,20 @@ NIL
 HORIZONTAL
 
 CHOOSER
-152
-188
-304
-233
+145
+218
+297
+263
 damage-distribution
 damage-distribution
 "normal" "exponential" "power law"
 1
 
 SLIDER
-12
-238
-150
-271
+5
+268
+143
+301
 mean-damage-value
 mean-damage-value
 0
@@ -597,10 +586,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-15
-197
-148
-230
+8
+227
+141
+260
 SD-if-normal-dist
 SD-if-normal-dist
 0
@@ -612,30 +601,19 @@ NIL
 HORIZONTAL
 
 SLIDER
-908
-430
-1123
-463
+0
+624
+215
+657
 total-system-supplies
 total-system-supplies
 1
 500000
-454251
+453901
 50
 1
 NIL
 HORIZONTAL
-
-MONITOR
-161
-235
-218
-280
-ticks
-ticks
-17
-1
-11
 
 BUTTON
 185
@@ -655,10 +633,10 @@ NIL
 1
 
 MONITOR
-217
-332
-312
-377
+960
+408
+1043
+453
 Avg recovery
 mean [recovery-pts] of survivors
 0
@@ -668,7 +646,7 @@ mean [recovery-pts] of survivors
 PLOT
 900
 10
-1321
+1311
 203
 Avg. system values
 NIL
@@ -688,10 +666,10 @@ PENS
 "avg recovery pts" 1.0 0 -4699768 true "" ""
 
 SWITCH
-14
-427
-204
-460
+933
+491
+1060
+524
 helper-tails?
 helper-tails?
 1
@@ -699,10 +677,10 @@ helper-tails?
 -1000
 
 SWITCH
-21
-480
-168
-513
+932
+528
+1061
+561
 survivor-tails?
 survivor-tails?
 1
@@ -710,10 +688,10 @@ survivor-tails?
 -1000
 
 SLIDER
-929
-477
-1101
-510
+21
+671
+193
+704
 %-helpers-mobile
 %-helpers-mobile
 0
@@ -725,32 +703,32 @@ NIL
 HORIZONTAL
 
 SWITCH
-24
-549
-179
-582
+1065
+528
+1202
+561
 hide-survivors?
 hide-survivors?
-1
+0
 1
 -1000
 
 SWITCH
-31
-593
-173
-626
+1064
+491
+1201
+524
 hide-helpers?
 hide-helpers?
-1
+0
 1
 -1000
 
 PLOT
-904
-522
-1315
-672
+901
+207
+1204
+357
 Survivor Distance Traveled
 distance traveled
 occurrences
@@ -765,15 +743,35 @@ PENS
 "distance-traveled" 1.0 0 -10899396 true "" ""
 
 MONITOR
-11
-381
-77
-426
+1045
+408
+1111
+453
 Avg. age
 mean [age] of survivors
 1
 1
 11
+
+TEXTBOX
+13
+318
+304
+360
+_____________________________________________________
+10
+8.0
+1
+
+TEXTBOX
+902
+459
+1334
+485
+__________________________________________________________________________________
+10
+8.0
+1
 
 @#$#@#$#@
 ## WHAT IS IT?
