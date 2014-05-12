@@ -166,6 +166,10 @@ end
 to go
   go-once
   
+  ; Hide and show survivors and helpers.
+  ifelse hide-survivors?  [ ask survivors [ ht ]] [ ask survivors [ st ]]
+  ifelse hide-helpers? [ ask helpers [ ht ]][ ask helpers [ st ]]
+  
   if not any? survivors [stop]
   if mean [ recovery-pts ] of survivors > 95 [
     ; Do some extra plotting, so we can visually recognize that it has flatlined. 
@@ -212,9 +216,6 @@ to survivor-move
 end
 
 to display-myself
-  
-  ifelse hide-survivors? [ ht ][ st ]
-  
   ifelse survival-pts > 75 [ set color 64 ]
     [ ifelse (75 <= survival-pts) and  (survival-pts > 50) [ set color 66 ]
       [ ifelse (50 <= survival-pts) and  (survival-pts > 25) [ set color 68 ]
@@ -223,7 +224,6 @@ end
 
 
 to helper-move
-  ifelse hide-helpers? [ ht ][ st ]
   
   ;set label round(capacity)
   let need ([h-type] of self)
@@ -431,7 +431,7 @@ num-survivors
 num-survivors
 1
 5000
-803
+815
 1
 1
 NIL
@@ -579,7 +579,7 @@ CHOOSER
 damage-distribution
 damage-distribution
 "normal" "exponential" "power law"
-0
+1
 
 SLIDER
 12
@@ -590,7 +590,7 @@ mean-damage-value
 mean-damage-value
 0
 100
-75
+70
 5
 1
 NIL
@@ -718,7 +718,7 @@ SLIDER
 %-helpers-mobile
 0
 100
-50
+100
 5
 1
 NIL
