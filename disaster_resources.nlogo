@@ -366,7 +366,7 @@ to do-plotting
   let maxrange filter [ ? = item 0 maxbar ] [distance-traveled] of survivors
   set maxrange length maxrange
   if maxrange < 1 [ set maxrange 1 ]  ; to prevent error from happening at very low number of survivor rates.
-  set-plot-y-range 0 ((maxrange) * 3)
+  set-plot-y-range 0 ((maxrange) * 2)
   set-plot-pen-mode 1
   set-histogram-num-bars 20
 
@@ -512,7 +512,7 @@ num-survivors
 num-survivors
 1
 5000
-5000
+2500
 1
 1
 NIL
@@ -560,7 +560,7 @@ num-helpers
 num-helpers
 1
 500
-236
+400
 5
 1
 NIL
@@ -575,7 +575,7 @@ centers
 centers
 1
 20
-9
+10
 1
 1
 NIL
@@ -603,10 +603,10 @@ _____________________________________________
 
 TEXTBOX
 73
-42
-335
-76
-Disaster resource distribution
+26
+241
+77
+Disaster Interaction Recovery Model (DIRM)
 14
 93.0
 1
@@ -620,8 +620,8 @@ survivor-carrying-capacity
 survivor-carrying-capacity
 1
 100
-31
-5
+20
+1
 1
 NIL
 HORIZONTAL
@@ -635,7 +635,7 @@ helper-supply-capacity
 helper-supply-capacity
 1
 5000
-2276
+500
 25
 1
 NIL
@@ -649,7 +649,7 @@ CHOOSER
 damage-distribution
 damage-distribution
 "normal" "exponential" "power law"
-1
+0
 
 SLIDER
 105
@@ -660,7 +660,7 @@ mean-damage-value
 mean-damage-value
 0
 100
-50
+75
 5
 1
 NIL
@@ -675,7 +675,7 @@ SD-if-normal-dist
 SD-if-normal-dist
 0
 100
-50
+75
 5
 1
 NIL
@@ -689,8 +689,8 @@ SLIDER
 total-system-supplies
 total-system-supplies
 1
-500000
-224051
+50000
+20000
 50
 1
 NIL
@@ -725,9 +725,9 @@ mean [recovery-pts] of survivors
 11
 
 PLOT
-900
+901
 10
-1311
+1312
 203
 Avg. system values
 NIL
@@ -777,7 +777,7 @@ SLIDER
 %-helpers-mobile
 0
 100
-45
+100
 5
 1
 NIL
@@ -865,10 +865,10 @@ Visualization enhancements
 1
 
 SWITCH
-1168
-367
-1307
-400
+230
+176
+369
+209
 write-outfile?
 write-outfile?
 1
@@ -881,7 +881,7 @@ INPUTBOX
 1308
 463
 run-label
-Testing damage distribution
+H-H-Y-H
 1
 0
 String
