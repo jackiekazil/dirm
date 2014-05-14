@@ -3,6 +3,7 @@ globals [
   movement-fwd
   capacity-setting
   tail-fade-rate
+  ages-at-death
 ]
 
 turtles-own [ home-patch current-need capacity ]
@@ -17,6 +18,7 @@ survivors-own [
   cost-per-tick survivor-days cost-per-day
   distance-traveled
   age
+  age-at-recovery
   ]
 
 ; h-type is the type of helper
@@ -35,10 +37,11 @@ to setup
   clear-all
   reset-ticks
   
-  set movement-fwd 1
+  set ages-at-death []
+
+  set movement-fwd fwd-movement
   setup-survivors
-  disaster-strikes
-  
+  disaster-strikes  
   ; We don't setup helpers until the end, because most would not appear until
   ; after the disaster hit
   setup-patches
@@ -167,6 +170,7 @@ to go-once
    if recovery-pts >= 100 [ 
      set recovery-pts 100 
      set recovered? True
+     set age-at-recovery age
      if (patch-here != home-patch) [
        set heading towards home-patch
        fd movement-fwd
@@ -176,19 +180,22 @@ to go-once
 
   do-plotting
   
-  if write-outfile? [ write-to-file ]
-  
   tick
+  
 end
 
 to go
   go-once
   
-  if not any? survivors [stop]
+  if not any? survivors [
+      if write-outfile? [ write-to-file ]
+      stop
+    ]
   if mean [ recovery-pts ] of survivors > 95 [
     ; Do some extra plotting, so we can visually recognize that it has flatlined. 
     ; Adding extra ticks knowingly b/c of the extra plotting.
     do-plotting tick do-plotting tick do-plotting tick do-plotting tick do-plotting tick
+    if write-outfile? [ write-to-file ]
     stop
     ]  
 end
@@ -229,7 +236,9 @@ to survivor-move
   set survival-pts (survival-pts - cost-per-tick)
   if survival-pts < 5 [
     ask home-patch [ set pcolor 1 ]
-    die ] ; we do less than 5 b/c we had some straggles when we set at 0.
+    set ages-at-death lput age ages-at-death  
+    die 
+    ] ; we do less than 5 b/c we had some straggles when we set at 0.
 end
 
 to display-myself
@@ -385,7 +394,7 @@ to write-to-file
   let r-pts mean [recovery-pts] of survivors
   let s-age mean [age] of survivors
     
-  file-open "output.csv"
+  file-open "data/results.csv"
   file-write run-label
   file-type ","
   file-write damage-distribution
@@ -400,7 +409,9 @@ to write-to-file
   file-type "," 
 
   file-write s-count
-  file-type "," 
+  file-type ","  
+  file-write (s-count / num-survivors)
+  file-type ","
   file-write s-age
   file-type "," 
   file-write s-pts
@@ -408,6 +419,15 @@ to write-to-file
   file-write r-pts
   file-type ","
   file-write mean ([distance-traveled] of survivors)
+  file-type ","
+  file-write ( s-age / (mean ([distance-traveled] of survivors)))
+  file-type ","
+  
+  ifelse ages-at-death = [] 
+    [file-write "None"]
+    [file-write mean ages-at-death]
+  file-type ","
+  file-write mean ([age-at-recovery] of survivors)
   file-type ","
   
   file-write centers
@@ -428,8 +448,11 @@ to write-to-file
 
   file-type "\n"
   file-close
+  
+  let filename (word "data/plots/" run-label ".csv")
+  export-plot "Avg. system values" filename
+  export-world (word "data/worlds/" run-label ".csv")
 end
-
 @#$#@#$#@
 GRAPHICS-WINDOW
 310
@@ -493,10 +516,10 @@ NIL
 1
 
 MONITOR
-902
-362
-965
-407
+1306
+219
+1377
+264
 survivors
 count survivors
 0
@@ -504,25 +527,25 @@ count survivors
 11
 
 SLIDER
-104
-375
-301
-408
+105
+360
+302
+393
 num-survivors
 num-survivors
 1
 5000
-2500
+4000
 1
 1
 NIL
 HORIZONTAL
 
 MONITOR
-902
-408
-959
-453
+1226
+267
+1303
+312
 Avg. life
 mean [survival-pts] of survivors
 0
@@ -530,10 +553,10 @@ mean [survival-pts] of survivors
 11
 
 MONITOR
-966
-362
-1039
-407
+1226
+219
+1303
+264
 S-helpers
 count helpers with [h-type = 0]
 0
@@ -541,10 +564,10 @@ count helpers with [h-type = 0]
 11
 
 MONITOR
-1040
-362
-1111
-407
+1306
+267
+1377
+312
 R-helpers
 count helpers with [h-type = 1]
 0
@@ -560,7 +583,7 @@ num-helpers
 num-helpers
 1
 500
-400
+30
 5
 1
 NIL
@@ -575,7 +598,7 @@ centers
 centers
 1
 20
-10
+15
 1
 1
 NIL
@@ -612,15 +635,15 @@ Disaster Interaction Recovery Model (DIRM)
 1
 
 SLIDER
-104
-413
-301
-446
+105
+398
+302
+431
 survivor-carrying-capacity
 survivor-carrying-capacity
 1
 100
-20
+30
 1
 1
 NIL
@@ -635,7 +658,7 @@ helper-supply-capacity
 helper-supply-capacity
 1
 5000
-500
+2000
 25
 1
 NIL
@@ -690,7 +713,7 @@ total-system-supplies
 total-system-supplies
 1
 50000
-20000
+50000
 50
 1
 NIL
@@ -714,10 +737,10 @@ NIL
 1
 
 MONITOR
-960
-408
-1043
-453
+1226
+316
+1309
+361
 Avg recovery
 mean [recovery-pts] of survivors
 0
@@ -727,7 +750,7 @@ mean [recovery-pts] of survivors
 PLOT
 901
 10
-1312
+1376
 203
 Avg. system values
 NIL
@@ -747,10 +770,10 @@ PENS
 "avg recovery pts" 1.0 0 -4699768 true "" ""
 
 SWITCH
-905
-506
-1032
-539
+907
+424
+1034
+457
 helper-tails?
 helper-tails?
 1
@@ -758,10 +781,10 @@ helper-tails?
 -1000
 
 SWITCH
-904
-543
-1033
-576
+906
+461
+1035
+494
 survivor-tails?
 survivor-tails?
 1
@@ -777,17 +800,17 @@ SLIDER
 %-helpers-mobile
 0
 100
-100
+50
 5
 1
 NIL
 HORIZONTAL
 
 SWITCH
-1037
-543
-1174
-576
+1039
+461
+1176
+494
 hide-survivors?
 hide-survivors?
 1
@@ -795,10 +818,10 @@ hide-survivors?
 -1000
 
 SWITCH
-1036
-506
-1173
-539
+1038
+424
+1175
+457
 hide-helpers?
 hide-helpers?
 1
@@ -808,8 +831,8 @@ hide-helpers?
 PLOT
 901
 207
-1204
-357
+1214
+379
 Survivor Distance Traveled
 distance traveled
 occurrences
@@ -824,10 +847,10 @@ PENS
 "distance-traveled" 1.0 0 -10899396 true "" ""
 
 MONITOR
-1045
-408
-1111
-453
+1311
+315
+1377
+360
 Avg. age
 mean [age] of survivors
 1
@@ -835,11 +858,11 @@ mean [age] of survivors
 11
 
 TEXTBOX
-902
-459
-1334
-485
-__________________________________________________________________________________
+901
+382
+1400
+408
+_________________________________________________________________________________________________
 10
 8.0
 1
@@ -855,36 +878,71 @@ System settings
 1
 
 TEXTBOX
-906
-484
-1095
-514
+904
+400
+1093
+430
 Visualization enhancements
-12
+11
 93.0
 1
 
 SWITCH
-230
-176
-369
-209
+908
+533
+1047
+566
 write-outfile?
 write-outfile?
-1
+0
 1
 -1000
 
 INPUTBOX
-1168
-403
-1308
-463
+908
+571
+1048
+631
 run-label
-H-H-Y-H
+H-L-50-H
 1
 0
 String
+
+TEXTBOX
+900
+493
+1391
+545
+_________________________________________________________________________________________________
+10
+8.0
+1
+
+TEXTBOX
+907
+511
+1057
+529
+File in/out controls
+11
+93.0
+1
+
+SLIDER
+105
+437
+302
+470
+fwd-movement
+fwd-movement
+0
+5
+1
+.25
+1
+NIL
+HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?
